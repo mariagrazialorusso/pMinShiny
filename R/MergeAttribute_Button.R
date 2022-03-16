@@ -5,14 +5,6 @@
 #'@import shinyWidgets
 
 
-
-
-
-
-#library(shiny)
-#library(shinyWidgets)
-#library(DT)
-
 AttUI <- function(id,data,num){
   ns <- NS(id)
 

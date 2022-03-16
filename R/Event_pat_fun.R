@@ -8,9 +8,6 @@
 
 
 event_pat<-function(data,chosen,flag){
-  # nb.cols <- length(chosen)                                     #num colori necessari
-  # mycolors <- colorRampPalette(brewer.pal(9, "Set1"))(nb.cols)
-
   mycolors<-c("#E41A1C","#C72A35", "#AB3A4E",
               "#8F4A68", "#735B81" ,"#566B9B",
               "#3A7BB4", "#3A85A8" ,"#3D8D96",

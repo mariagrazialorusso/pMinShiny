@@ -10,14 +10,8 @@
 
 
 merge_fun<-function(){
-  #AGGIUNGO CONTROLLI CHE SE RULE VUOTO RESTITUISCO EVENT LOG COSI COMEé
-  # mydir<-file.path(
-  #   # getwd(),
-  #                  "myScripts/merge_module",
-  #                  "loaded_file")
-  # EventLog<-read.csv( file.path(mydir, 'uploadEL.csv'), sep=","  )
 
-  EventLog<-all.data[["EventLog"]]
+    EventLog<-all.data[["EventLog"]]
   data<-all.data[!names(all.data)=="EventLog"]
   rules<-lapply(all.xml, XML.read.fun)
 
@@ -176,8 +170,6 @@ merge_fun<-function(){
                         }else{
                           val<-NULL
                         }
-
-                        #https://stackoverflow.com/questions/31170512/regression-analysis-not-showing-summary
                       }
               )
 

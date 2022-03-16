@@ -17,8 +17,6 @@
 # library(lubridate)
 
 time_dist<-function(data,chosen,date_range){
-  # nb.cols <- length(chosen)                                     #num colori necessari
-  # mycolors <- colorRampPalette(brewer.pal(9, "Set2"))(nb.cols)
 
   mycolors<-c("#E41A1C",
 

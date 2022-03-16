@@ -6,12 +6,6 @@
 #'
 
 
-
-# library(ggplot2)
-# library(dplyr)
-
-
-
 #function for event distribution plot
 event_plot<-function(data,chosen,flag){
   # nb.cols <- length(chosen)                                     #num colori necessari
@@ -32,11 +26,11 @@ event_plot<-function(data,chosen,flag){
               "#EB7AA9", "#F581BE" ,"#E585B8",
               "#D689B1", "#C78DAB", "#B791A5",
               "#A8959F", "#999999")
-  # mycolors <- colorRampPalette(brewer.pal(9, "Set1"))(nb.cols)
+
   if(is.null(chosen)){
     chosen=""
   }
-  data_plot<-select(data,4)                               #NECESSARIA GENERALIZZAZIONE????
+  data_plot<-select(data,4)
   data_plot[,1]<-as.factor(data_plot[,1])
 
   data_plot<-subset(data_plot,data_plot[,1] %in% chosen)

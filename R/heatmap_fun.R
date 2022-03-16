@@ -12,14 +12,6 @@
 
 heatmap<-function(data,chosen,objDL.new){
   objDL.new$applyFilter(array.events.to.keep = chosen)
-  # id<-select(data,1)[,1]
-  # date_var<-as.Date(select(data,2)[,1])
-  # events<-as.factor(select(data,4)[,1])
-  # new_data<-data.frame(id,date_var,events)
-  # new_data<-subset(new_data, events %in% chosen)
-  # objDL.new <- dataLoader(verbose.mode = FALSE)
-  # objDL.new$load.data.frame(mydata = new_data,IDName = "id",EVENTName = "events",dateColumnName = "date_var",
-  #                           format.column.date = "%Y-%m-%d")
   objDL.new.export <- objDL.new$getData()
   arr.eventi <- objDL.new.export$arrayAssociativo[!(objDL.new.export$arrayAssociativo %in% c("BEGIN","END"))]
   MM.Cross <- matrix( 0,nrow = length(arr.eventi), ncol = length(arr.eventi) )

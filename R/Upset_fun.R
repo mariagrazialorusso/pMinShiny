@@ -8,22 +8,8 @@
 #'
 
 
-
-
-
-# library(pMineR)
-# library(UpSetR)
-# library(dplyr)
-
 upset_fun<-function(data,chosen,objDL.new){
   objDL.new$applyFilter(array.events.to.keep = chosen)
-  # id<-select(data,1)[,1]
-  # date_var<-as.Date(select(data,2)[,1])
-  # events<-as.factor(select(data,4)[,1])
-  # new_data<-data.frame(id,date_var,events)
-  # objDL.new <- dataLoader(verbose.mode = FALSE)
-  # objDL.new$load.data.frame(mydata = new_data,IDName = "id",EVENTName = "events",dateColumnName = "date_var",
-  #                           format.column.date = "%Y-%m-%d")
   objDL.new.export <- objDL.new$getData()
   df<-as.data.frame(objDL.new.export$original.CSV)
   names<-unique(df[,5])
@@ -45,10 +31,6 @@ upset_fun<-function(data,chosen,objDL.new){
   }
 
   upsetData<-as.data.frame(upsetMat)
-  # tot<-colSums(upsetData)
-  # tot<-tot[!tot==0]
-  #
-  # upsetData<-subset(upsetData, select = names(tot))
   upset(upsetData,nsets = length(names), point.size = 3.5, line.size = 1.8,
         mainbar.y.label = "Events Intersections",
         sets.x.label = "Event Type",

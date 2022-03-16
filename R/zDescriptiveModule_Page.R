@@ -6,6 +6,7 @@
 #'@import dplyr
 #'@import shinyWidgets
 #'@import DT
+#'@import kableExtra
 
 
 
@@ -52,7 +53,8 @@ server.descr<-function(input,output,session){
     tabs=list(),
     event_delete=array(),
     event_density=array(),
-    date_range=array()
+    date_range=array(),
+    empty.id.flag=FALSE
   )
 
 
@@ -80,8 +82,14 @@ server.descr<-function(input,output,session){
     objDL.new <<- dataLoader(verbose.mode = FALSE)
     objDL.new$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
                               format.column.date = "%Y-%m-%d")
-    # objDL.new.export <<- objDL.new$getData()
-    # data_reactive$EventLog <- loadData("uploadEL.csv")
+    objDL.out<<-objDL.new$getData()
+
+
+
+    objQOD <<- QOD()
+    objQOD$loadDataset(dataList = objDL.out)
+
+
     if(is_empty(data_reactive$EventLog)){
       sendSweetAlert(
         session = session,
@@ -264,6 +272,49 @@ server.descr<-function(input,output,session){
                                                    plotOutput("upsetplot")
                                                  )
                                         ),
+
+                                        #TABPANEL 6: TRACE EVOLUTION plot
+                                        tabPanel("Trace Evolution plot",
+                                                 fluidRow(
+                                                   column(11,
+                                                   ),
+                                                   column(1,
+                                                          dropdownButton(
+                                                            tags$h4(strong("Trace-plot")),
+                                                            tags$h5("This plot shows the traces and reveal the contribute of all the traces during the time."),
+                                                            tags$h5("Switch if you want to see the",strong("cumulative"),":"),
+
+                                                            switchInput(
+                                                              inputId = "trace_cum",
+                                                              label = "",
+                                                              labelWidth = "20px",
+                                                              size = "mini"
+                                                            ),
+
+                                                            tags$h5("It is also possible to set the ",strong("temporal scale")," and to select the",strong("max time value")),
+
+                                                            selectInput("time_scale",
+                                                                        label = "",
+                                                                        choices = c("hours","days","weeks","months"),
+                                                                        selected = "weeks"
+
+                                                            ),
+
+                                                            numericInput("max.t", label = "Set max time:", value = 10),
+
+
+                                                            circle = FALSE,
+                                                            status = "info",
+                                                            size = "xs",
+                                                            icon = icon("fas fa-info"),
+                                                            width = "300px",
+                                                            right = TRUE,
+                                                            tooltip = tooltipOptions(title = "Click to more info"))
+                                                   )),
+                                                 fluidRow(
+                                                   plotOutput("traceplot")
+                                                 )
+                                        ),
                                       )
                                     ),
                                   ),
@@ -273,7 +324,166 @@ server.descr<-function(input,output,session){
                 target = "Loading Data",
                 position = "after")
     }
+
+
+    removeTab(inputId = "tabs", target = "EventLog trace inspection")
+    if(!is_empty(data_reactive$EventLog)){
+      insertTab("tabs",
+                tabPanel("EventLog trace inspection",
+                         titlePanel("Trace Analysis"),
+                         br(),
+                         fluidRow(
+                           column(12,
+                                  sidebarLayout(
+                                    sidebarPanel(
+                                      p("In this section it is possible to scout which traces satisfy some rules
+                                        that you can define by completing the following fields: "),
+                                      fluidRow(
+                                        column(6,
+                                               selectInput("event.start",
+                                                           label = "starting event:",
+                                                           choices = unique(data_reactive$EventLog[,4])
+                                               )
+                                        ),
+                                        column(6,
+                                               selectInput("event.end",
+                                                           label = "last event:",
+                                                           choices = unique(data_reactive$EventLog[,4])
+                                               )
+                                        )
+
+                                      ),
+
+
+
+                                      p("Select the time window where a transition between
+                                        the selected \"starting\" and \"last\" event should be considered valid."),
+
+                                      fluidRow(
+                                        column(4,
+                                               numericInput("time.b", label = "Set min time:", value = 0)
+                                               ),
+                                        column(4,
+                                               numericInput("time.a", label = "Set max time:", value = 20)
+                                               ),
+                                        column(4,
+                                               switchInput(
+                                                 inputId = "inf",
+                                                 label = "max",
+                                                 labelWidth = "20px",
+                                                 size= "mini"
+                                               )
+
+                                        )
+                                      ),
+
+                                      fluidRow(
+                                        column(12,
+                                               selectInput("um.time",
+                                                           label = "Select the time scale",
+                                                           choices = c("minutes","hours","days","weeks","months"),
+                                                           selected = "days"
+                                               )
+                                        )
+                                      ),
+
+                                      p("you can select wich event should be in between the \"starting\" and \"last\" event"),
+
+                                      fluidRow(
+                                        column(6,
+                                               selectInput("event.between",
+                                                           label = "Event Between:",
+                                                           choices = unique(data_reactive$EventLog[,4]),
+                                                           multiple = TRUE)
+                                               )
+                                      )
+                                    ),
+                                    mainPanel(
+                                      tabsetPanel(
+                                        tabPanel("Trace Table",
+                                                 if(data_reactive$empty.id.flag){
+                                                   textOutput("errore1")
+                                                 }else{
+                                                   DT::dataTableOutput("trace.id")
+                                                 }
+
+                                        ),
+                                        tabPanel("Time Line Plot",
+                                                 if(data_reactive$empty.id.flag){
+                                                   textOutput("errore1")
+                                                 }else{
+                                                   plotOutput("time.line")
+                                                 }
+
+                                        )
+                                      )
+
+                                      # if(data_reactive$empty.id.flag){
+                                      #   tabsetPanel(
+                                      #     tabPanel("Trace Table",
+                                      #              textOutput("errore1")
+                                      #     ),
+                                      #     tabPanel("Time Line Plot",
+                                      #              textOutput("errore2")
+                                      #     )
+                                      #   )
+                                      #
+                                      # }else{
+                                      #   tabsetPanel(
+                                      #     tabPanel("Trace Table",
+                                      #              DT::dataTableOutput("trace.id")
+                                      #     ),
+                                      #     tabPanel("Time Line Plot",
+                                      #              plotOutput("time.line")
+                                      #     )
+                                      #   )
+                                      # }
+                                    )
+                                  )
+                           )
+                         )
+                ),
+                target = "EventLog data analysis",
+                position = "after"
+      )
+    }
+
   })
+
+  matrix_taceid<-reactive({
+    matrix.id<-trace.id(objQOD, input$event.start,input$event.end, input$time.b, input$time.a, input$inf,input$um.time,input$event.between, comp.mat = TRUE)
+    if(is.na(matrix.id)) data_reactive$empty.id.flag<-TRUE
+    datax<-as.data.frame(matrix.id)
+    colnames(datax)[1]<-"ID"
+    # return(matrix.id)
+    return(datax)
+  })
+
+
+  output$trace.id<- DT::renderDataTable({
+    matrix_taceid()
+    # as.data.frame(matrix_taceid())
+  })
+
+  plot.traceid<-reactive({
+    id<-trace.id(objQOD, input$event.start,input$event.end, input$time.b, input$time.a,
+                 input$inf,input$um.time,input$event.between, comp.mat = FALSE)
+    if(is.na(id)){
+      data_reactive$empty.id.flag<-TRUE
+    }
+
+    plot.trace<-plot.timeline.fun(objQOD,id)
+    return(plot.trace)
+  })
+
+  output$time.line<-renderPlot({
+    plot.traceid()
+  })
+
+  output$errore1<-renderText("No patient with traces that meet the inherent requirements")
+  output$errore2<-renderText("No patient with traces that meet the inherent requirements")
+
+
 
 
   #========================== Event distribution plot (first tabPanel: output$eventdist)=================================
@@ -297,7 +507,7 @@ server.descr<-function(input,output,session){
     plot_obj_event_paz()
   })
 
-  #==================================== Event distribution over time (second tabPanel: output$eventdist_Time)===================
+  #==================================== Event distribution over time (third tabPanel: output$eventdist_Time)===================
   observeEvent(input$date.range,{
     data_reactive$date_range<-input$date.range
   })
@@ -312,7 +522,7 @@ server.descr<-function(input,output,session){
   output$eventdist_Time<-renderPlot({
     plot_obj_event_time()
   })
-  #=================================== Event heatmap (third tabPanel: output$heatmap)==========================================
+  #=================================== Event heatmap (fourth tabPanel: output$heatmap)==========================================
   plot_obj_heatmap<-reactive({
     validate(
       need(length(data_reactive$event_delete)>1, "You need at least 2 different events")
@@ -325,7 +535,7 @@ server.descr<-function(input,output,session){
   output$heatmap<-renderPlot({
     plot_obj_heatmap()
   })
-  #=================================== Event upsetPlot plot (fourth tabPanel: output$upsetplot) =================================
+  #=================================== Event upsetPlot plot (fiveth tabPanel: output$upsetplot) =================================
   plot_obj_upsetplot<-reactive({
     validate(
       need(length(data_reactive$event_delete)>1, "You need at least 2 different events")
@@ -339,7 +549,23 @@ server.descr<-function(input,output,session){
     plot_obj_upsetplot()
   })
 
+  #=================================== Event trace plot (sixth tabPanel: output$traceplot) =================================
+  plot_obj_traceplot<-reactive({
+    validate(
+      need(length(data_reactive$event_delete)>1, "You need at least 2 different events")
+    )
+
+    cum.flag<-input$trace_cum
+    temp.scale<-input$time_scale
+
+    plot_fin<-trace.evolution(data_reactive$event_delete,objDL.new,cum.flag,temp.scale,input$max.t)
+    return(plot_fin)
+  })
+
+  output$traceplot<-renderPlot({
+    plot_obj_traceplot()
+  })
 
 }
 
-# shinyApp(ui = ui.descr, server = server.descr)
+

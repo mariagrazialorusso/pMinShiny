@@ -19,8 +19,6 @@ ui_mod_long<-function(id,data,num){
              strong(h3("Data recap:")),
              br(),
              DT::dataTableOutput(ns("showtab")),
-             # mainPanel(dataTableOutput(ns("showtab")), #recap dati del file i-esimo
-             #           width = 12),
              br()
       )
     ),

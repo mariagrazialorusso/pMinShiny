@@ -5,13 +5,6 @@
 #'@import shinyWidgets
 
 
-#library(shiny)
-#library(dbplyr)
-#library(shinyWidgets)
-
-
-
-
 ui_merge.ev<-function(id,data,num){
   ns<-NS(id)
   fluidPage(
@@ -95,7 +88,7 @@ ui_merge.ev<-function(id,data,num){
                selected = NULL
              ),
              prettySwitch(ns("new.name"),"set new "),
-             # textOutput(ns("event_name"))
+
 
       )
 
@@ -147,7 +140,6 @@ ui_merge.ev<-function(id,data,num){
              fluidRow(
                column(12,
                       br(),
-                      # actionButton(ns("wrtXML"), label= "complete merge",icon = icon("far fa-object-ungroup"),width = '42%')
                       actionBttn(
                         inputId = ns("wrtXML"),
                         label = "Save Settings",
@@ -317,7 +309,6 @@ server_merge.ev<-function(input,output,session,data,id){
 
     if(data_ret.ev$new.name & !is.na(data_ret.ev$setted_name)){
       df[which(!is.na(df[,2])),4]<-data_ret.ev$setted_name
-      # df[which(!is.na(df[,2])),4]<-rep(data_ret.ev$setted_name,nrow(df))
     }
 
     return(df)})
@@ -328,11 +319,6 @@ server_merge.ev<-function(input,output,session,data,id){
   observeEvent(input$wrtXML,{
     event<-list()
     event[[1]]<-c(data_ret.ev$data_ini,data_ret.ev$data_end,data_ret.ev$event,"NA")
-    # if(data_ret.ev$data_ini=="" | data_ret.ev$data_end=="" | data_ret.ev$event==""){
-    #   event[[1]]<-c("NA","NA","NA","NA")
-    # }else{
-    #   event[[1]]<-c(data_ret.ev$data_ini,data_ret.ev$data_end,data_ret.ev$event,"NA")
-    # }
     if(data_ret.ev$new.name){
       event[[1]]<-c(data_ret.ev$data_ini,data_ret.ev$data_end,data_ret.ev$event,data_ret.ev$setted_name)
     }

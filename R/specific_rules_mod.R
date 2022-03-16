@@ -5,18 +5,6 @@
 #'@import shinyWidgets
 
 
-
-
-#library(shiny)
-#library(shinythemes)
-#library(dbplyr)
-#library(shinyWidgets)
-
-
-
-
-
-
 ui_regole<-function(id,data,num){
   ns<-NS(id)
   fluidPage(
@@ -106,13 +94,6 @@ ui_regole<-function(id,data,num){
              pickerInput(ns("rule"),"Select rule\n",choices = c("mean","min value","max value","last measure","first measure","count","spline"))
       )
     ),
-
-    # fluidRow(
-    #   column(12,
-    #
-    #
-    #   )
-    # ),
 
     fluidRow(
       column(12,

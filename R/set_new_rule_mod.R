@@ -4,14 +4,6 @@
 #'@import shinyWidgets
 
 
-
-
-#library(shiny)
-#library(dbplyr)
-#library(shinyWidgets)
-#library(DT)
-
-
 spec_setting_ui<-function(id,var.name,var_long_type){
   ns<-NS(id)
 
@@ -88,9 +80,7 @@ spec_setting_server<-function(input,output,session,filename,var.name){
     }else{
       all.sRules[[var.name]]<<-c(data_input$delta_b,data_input$delta_a,data_input$rule)
     }
-    # text_lines <-c(data_input$delta_b,data_input$delta_a,data_input$rule)
-    # spec_rule_fun(text_lines,filename)
-    # # cat(text_lines,filename,sep="\n")
+
   })
 
 }

@@ -5,14 +5,6 @@
 
 
 
-
-
-#library(XML)
-
-
-
-
-
 XML.write.fun<-function(id,key,cross,rule,crossEL,flag){
   prefix.xml <- "<file><key><var/></key><crossvars/><longvar/></file>"
 
@@ -97,7 +89,7 @@ XML.write.fun<-function(id,key,cross,rule,crossEL,flag){
 
 
 
-#input: filepath<-"C:/Users/maria/Desktop/tesi/Rscript/pMiner.v045b/myScripts/myApp/xml_file/MergeFile1.xml"
+
 
 XML.read.fun<-function(xml.el){
   # res <- xmlParse(file = filePath)

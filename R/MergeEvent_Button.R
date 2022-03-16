@@ -6,13 +6,6 @@
 
 
 
-
-#library(shiny)
-#library(shinyWidgets)
-
-
-
-
 EventUI <- function(id,data,num){
   ns <- NS(id)
 

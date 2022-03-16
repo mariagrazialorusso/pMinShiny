@@ -11,34 +11,6 @@
 
 
 
-# library(shiny)
-# library(shinythemes)
-# library(dplyr)
-# library(shinyWidgets)
-# library(DT)
-# library(rlang)
-# library(shinybusy)
-
-# ui<-fluidPage(
-#     # #theme selection
-#     # shinythemes::themeSelector(),
-#     # #error Style:
-#     # tags$head(tags$style(HTML(".shiny-output-error-validation {color: #ff0000;font-weight: bold;}"))),
-#
-#     #Pagina Principale
-#     navbarPage("pMining: EventLog Merge Module", id="tabs",
-#                tabPanel("Loading Data",
-#                         titlePanel("Data Uploading"),
-#                         br(),
-#                         import_mod_ui("uploadEL","Upload EventLog file",TRUE),
-#                         actionButton("loadEL","Load Event Log",width = '32%') ,
-#                )
-#     )
-#   )
-
-
-
-
 server<-function(input,output,session){
   #visualizzazione EventLog
   tab<-callModule(import_data_server,"uploadEL","EventLog")
@@ -130,10 +102,10 @@ server<-function(input,output,session){
 
 
     #loading data uploaded in the upload section
-    removeTab(inputId = "tabs", target = "Enrichment rules")
+    removeTab(inputId = "tabs", target = "Enrichment techniques")
     insertTab(inputId = "tabs",
-              tabPanel("Enrichment rules",
-                       titlePanel("Merging Rules setting"),
+              tabPanel("Enrichment techniques",
+                       titlePanel("Enrichment techniques"),
                        # br(),
                        tags$hr(),
                        fluidRow(
@@ -209,17 +181,7 @@ server<-function(input,output,session){
                        data_reactive$final_EL<-data.frame()
                      })
                  })
-    # tryCatch(
-    #   {
-    #     data_reactive$final_EL<-merge_fun()
-    #   },
-    #   error = function(e) {
-    #     # return a safeError if a parsing error occurs
-    #     # stop(safeError(e))
-    #     data_reactive$final_EL<-data.frame()
-    #   })
 
-    # data_reactive$final_EL<-merge_fun()
     removeTab(inputId = "tabs", target = "New Event Log")
     insertTab(inputId = "tabs",
               tabPanel("New Event Log",
@@ -251,7 +213,7 @@ server<-function(input,output,session){
 
 
               ),
-              target = "Enrichment rules",
+              target = "Enrichment techniques",
               position = "after")
   })
 
