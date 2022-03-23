@@ -54,7 +54,9 @@ server.descr<-function(input,output,session){
     event_delete=array(),
     event_density=array(),
     date_range=array(),
-    empty.id.flag=FALSE
+    ev.start=array(),
+    ev.end= array(),
+    ev.bet=array()
   )
 
 
@@ -348,7 +350,10 @@ server.descr<-function(input,output,session){
                                         column(6,
                                                selectInput("event.end",
                                                            label = "last event:",
-                                                           choices = unique(data_reactive$EventLog[,4])
+                                                           choices = unique(data_reactive$EventLog[,4]),
+                                                           selected = unique(data_reactive$EventLog[,4])[2]
+
+
                                                )
                                         )
 
@@ -387,12 +392,19 @@ server.descr<-function(input,output,session){
                                         )
                                       ),
 
-                                      p("you can select wich event should be in between the \"starting\" and \"last\" event"),
+                                      p("you can select wich event should and should not be in between the \"starting\" and \"last\" event"),
 
                                       fluidRow(
                                         column(6,
                                                selectInput("event.between",
                                                            label = "Event Between:",
+                                                           choices = unique(data_reactive$EventLog[,4]),
+                                                           multiple = TRUE)
+                                               ),
+
+                                        column(6,
+                                               selectInput("event.NOT.between",
+                                                           label = "Event NOT Between:",
                                                            choices = unique(data_reactive$EventLog[,4]),
                                                            multiple = TRUE)
                                                )
@@ -401,48 +413,45 @@ server.descr<-function(input,output,session){
                                     mainPanel(
                                       tabsetPanel(
                                         tabPanel("Trace Table",
-                                                 if(data_reactive$empty.id.flag){
-                                                   textOutput("errore1")
-                                                 }else{
                                                    DT::dataTableOutput("trace.id")
-                                                 }
+                                                 ),
 
-                                        ),
                                         tabPanel("Time Line Plot",
-                                                 if(data_reactive$empty.id.flag){
-                                                   textOutput("errore1")
-                                                 }else{
-                                                   plotOutput("time.line")
-                                                 }
+                                                 fluidRow(
+                                                   column(11,
+                                                          plotOutput("time.line")
+                                                          ),
+                                                   column(1,
+                                                          dropdownButton(
+                                                            tags$h4(strong("Time Line Plot")),
+                                                            tags$h5("This plot shows graphically the succession of the events that have been
+                                                                    experienced by each patient whose trace responds to the query expressed in the left panel"),
 
+                                                            br(),
+                                                            tags$h5("Switch if you want to show patient ID on y axes"),
+                                                            switchInput(
+                                                              inputId = "id.legend",
+                                                              label = "show ID",
+                                                              labelWidth = "15px",
+                                                              size = "mini"
+                                                            ),
+                                                            circle = FALSE,
+                                                            status = "info",
+                                                            size = "xs",
+                                                            icon = icon("fas fa-info"),
+                                                            width = "300px",
+                                                            right = TRUE,
+                                                            tooltip = tooltipOptions(title = "Click to more info"))
+                                                          )
+                                                 )
+
+                                              )
                                         )
                                       )
-
-                                      # if(data_reactive$empty.id.flag){
-                                      #   tabsetPanel(
-                                      #     tabPanel("Trace Table",
-                                      #              textOutput("errore1")
-                                      #     ),
-                                      #     tabPanel("Time Line Plot",
-                                      #              textOutput("errore2")
-                                      #     )
-                                      #   )
-                                      #
-                                      # }else{
-                                      #   tabsetPanel(
-                                      #     tabPanel("Trace Table",
-                                      #              DT::dataTableOutput("trace.id")
-                                      #     ),
-                                      #     tabPanel("Time Line Plot",
-                                      #              plotOutput("time.line")
-                                      #     )
-                                      #   )
-                                      # }
                                     )
                                   )
                            )
-                         )
-                ),
+                         ),
                 target = "EventLog data analysis",
                 position = "after"
       )
@@ -450,41 +459,97 @@ server.descr<-function(input,output,session){
 
   })
 
+
+  observeEvent(input$event.start,{
+    data_reactive$ev.start<-input$event.start
+    shiny::updateSelectInput(
+      inputId = "event.end",
+      label = "last event:",
+      choices = unique(data_reactive$EventLog[,4])[!unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.start]
+    )
+    shiny::updateSelectInput(
+      inputId = "event.NOT.between",
+      label = "Event NOT Between:",
+      choices = unique(data_reactive$EventLog[,4])[!unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.bet &
+                                                     !unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.start &
+                                                     !unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.end]
+    )
+
+  })
+
+  observeEvent(input$event.end,{
+    data_reactive$ev.end<-input$event.end
+    shiny::updateSelectInput(
+      inputId = "event.NOT.between",
+      label = "Event NOT Between:",
+      choices = unique(data_reactive$EventLog[,4])[!unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.bet &
+                                                     !unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.start &
+                                                     !unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.end]
+    )
+  })
+
+  observeEvent(input$event.between,{
+    data_reactive$ev.bet<-input$event.between
+    shiny::updateSelectInput(
+      inputId = "event.NOT.between",
+      label = "Event NOT Between:",
+      choices = unique(data_reactive$EventLog[,4])[!unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.bet &
+                                                   !unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.start &
+                                                   !unique(data_reactive$EventLog[,4]) %in% data_reactive$ev.end]
+    )
+
+  })
+
+
+#======================================================== ID TRACE DATA TABLE ===============================================
   matrix_taceid<-reactive({
-    matrix.id<-trace.id(objQOD, input$event.start,input$event.end, input$time.b, input$time.a, input$inf,input$um.time,input$event.between, comp.mat = TRUE)
-    if(is.na(matrix.id)) data_reactive$empty.id.flag<-TRUE
+    matrix.id<-trace.id(objQOD,
+                        input$event.start,
+                        input$event.end,
+                        input$time.b,
+                        input$time.a,
+                        input$inf,
+                        input$um.time,
+                        input$event.between,
+                        input$event.NOT.between,
+                        comp.mat = TRUE)
     datax<-as.data.frame(matrix.id)
     colnames(datax)[1]<-"ID"
-    # return(matrix.id)
     return(datax)
   })
 
 
   output$trace.id<- DT::renderDataTable({
-    matrix_taceid()
-    # as.data.frame(matrix_taceid())
+    if(is.na(matrix_taceid())){
+      validate("No patient with traces that meet the inherent requirements")
+    }
+     matrix_taceid()
   })
 
-  plot.traceid<-reactive({
-    id<-trace.id(objQOD, input$event.start,input$event.end, input$time.b, input$time.a,
-                 input$inf,input$um.time,input$event.between, comp.mat = FALSE)
-    if(is.na(id)){
-      data_reactive$empty.id.flag<-TRUE
-    }
 
-    plot.trace<-plot.timeline.fun(objQOD,id)
+  #======================================================== TRACE TIME LINE ===================================================
+
+  plot.traceid<-reactive({
+    id<-trace.id(objQOD,
+                 input$event.start,
+                 input$event.end,
+                 input$time.b,
+                 input$time.a,
+                 input$inf,
+                 input$um.time,
+                 input$event.between,
+                 input$event.NOT.between,
+                 comp.mat = FALSE)
+    plot.trace<-plot.timeline.fun(objQOD,id,input$um.time, input$id.legend)
     return(plot.trace)
   })
 
   output$time.line<-renderPlot({
+    if(is.na(matrix_taceid())){
+      validate("No patient with traces that meet the inherent requirements")
+    }
     plot.traceid()
   })
-
-  output$errore1<-renderText("No patient with traces that meet the inherent requirements")
-  output$errore2<-renderText("No patient with traces that meet the inherent requirements")
-
-
-
 
   #========================== Event distribution plot (first tabPanel: output$eventdist)=================================
   plot_obj_eldist<-reactive({

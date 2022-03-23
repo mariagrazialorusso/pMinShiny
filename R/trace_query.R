@@ -37,22 +37,10 @@
 # # arr.passingThrough = c(),
 # # arr.NOTpassingThrough = c(),
 # # returnCompleteMatrix = FALSE
-#
-# arr.ID
-#
-# #seleziono quali pazienti sono andati da Accesstohospital a ICU passando per "Tested_positive"
-# arr.ID1 <- objQOD$query(from = "AccessToHospital",to = "ICU",arr.passingThrough=c("Tested_Positive"),returnCompleteMatrix =TRUE)
-# arr.ID1
-#
-#
-# ################################################ 2. PLOT TIME LINE  ##############################################################
-# arr.IPP.to.plot <- objQOD$query(from = C,to = "ICU",arr.passingThrough=c("Tested_Positive"),returnCompleteMatrix =FALSE)
-#
-#
-# objQOD$plotTimeline(objDL.obj = objDL.out,arr.ID = arr.IPP.to.plot,UM = "weeks",ID.on.y.label = FALSE,arr.evt.pch = c("AccessToHospital"=19,"ICU"=17))
 
 
-trace.id<-function(Obj.QOD, event.start,event.end, time.b, time.a, inf.flag,um.time,event.between, comp.mat=TRUE){
+
+trace.id<-function(Obj.QOD, event.start,event.end, time.b, time.a, inf.flag,um.time,event.between,event.NOT.between, comp.mat=TRUE){
   if(inf.flag){
     time.r<-c(time.b,Inf)
   }else{
@@ -64,6 +52,7 @@ trace.id<-function(Obj.QOD, event.start,event.end, time.b, time.a, inf.flag,um.t
                           UM= um.time,
                           arr.passingThrough =event.between,
                           time.range= time.r,
+                          arr.NOTpassingThrough = event.NOT.between,
                           returnCompleteMatrix =comp.mat)
 
   return(arr.ID)

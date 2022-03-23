@@ -13,6 +13,7 @@ trace.id(
   inf.flag,
   um.time,
   event.between,
+  event.NOT.between,
   comp.mat = TRUE
 )
 }
