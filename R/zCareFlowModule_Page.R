@@ -272,11 +272,49 @@ server.careFlow<-function(input,output,session){
      }else{
        dp<-data_reactive$depth
      }
+
+     if(data_reactive$median_time){
+       cf.graph<-ObjCFM$plotCFGraph(depth = dp,  #PROFONDITA
+                                    abs.threshold = data_reactive$support, #support
+                                    kindOfGraph = "dot",
+                                    nodeShape = "square")
+       len<-length(cf.graph$arr.nodi)
+       id.nodi<-array()
+       for (i in c(1:len)) {
+         id.nodi[i]<-strsplit(cf.graph$arr.nodi[i],"'")[[1]][2]
+       }
+
+       id.nodi<-as.numeric(id.nodi[2:length(id.nodi)])
+
+       lst.nodi<-ObjCFM$getDataStructure()$lst.nodi
+       loadedDataset<-ObjDL$getData()
+       median.time<-array()
+       for (i in c(1:length(id.nodi))) {
+         son<-as.character(id.nodi[i])
+         tmp.tempi<-unlist(lapply(lst.nodi[[son]]$IPP, function(tmpIPP)
+         { loadedDataset$pat.process[[tmpIPP]][lst.nodi[[son]]$depth,"pMineR.deltaDate"] }))
+         if( length(tmp.tempi) > 0) {
+           tmp.tempi <- as.numeric(unlist(lapply(tmp.tempi,function(x){  format((x/(24*60)),digits=3) })))
+           med<-median(tmp.tempi)
+         }else{
+           tmp.tempi<-NA
+           med<-NA
+         }
+         median.time[i]<-med
+       }
+
+       time.unique<-unique(median.time[order(median.time)])
+       cut.off<-floor(length(time.unique)/4)
+       col.threshold<-c(time.unique[cut.off],time.unique[cut.off*2],time.unique[cut.off*3])
+     }else{
+       col.threshold<-c()
+     }
      cf.graph<-ObjCFM$plotCFGraph(depth = dp,  #PROFONDITA
                                   withPercentages = TRUE,
                                   relative.percentages = TRUE,
                                   show.far.leaf = data_reactive$leaf, #leaf
                                   show.median.time.from.root = data_reactive$median_time,#time
+                                  heatmap.based.on.median.time = col.threshold,
                                   abs.threshold = data_reactive$support, #support
                                   kindOfGraph = "dot",
                                   nodeShape = "square")$script
@@ -299,8 +337,9 @@ server.careFlow<-function(input,output,session){
      shades<-c("Red","LightGoldenrodYellow","Lavender","LightCyan","LightSalmon","SandyBrown","	LightYellow","LightGreen")
 
 
-     if(is.na(col.pred)){
-       sub.shades<-c()
+     if(is.null(input$pred.outcome.col)){
+       sub.shades<-shades[1]
+       names(sub.shades)<-input$pred.outcome
 
      }else{
        len<-length(input$pred.outcome.col)+1
