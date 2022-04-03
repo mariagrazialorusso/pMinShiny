@@ -389,15 +389,34 @@ server.careFlow<-function(input,output,session){
                     br(),
                     p(h5("Please note that in this section are used the depth and support parameters entered in the previous panel")),
                     tags$hr(),
+
                     fluidRow(
                       selectInput("strat.var", label = "Select variable for the stratification:",
                                   choices = colnames(data_reactive$EventLog)[5:length(data_reactive$EventLog)])
                     ),
+
+                    p(h5("Before proceeding with the setting of the stratification parameters,
+                         it is important to specify whether the chosen attribute is numeric or categorical")),
                     fluidRow(
-                      selectInput("strat.value", label = "Select possible value fot the selected var:",
-                                  choices = unique(data_reactive$EventLog[input$strat.var]),
-                                                   multiple = TRUE
-                                                   ),
+                     selectInput("strat.var.type", label ="",
+                                 choices = c("Categorical","Numeric"),
+                                 selected = NULL
+                                 )
+
+                    ),
+                    fluidRow(
+                      column(6,
+                             selectInput("strat.value1", label = "Select possible value fot the selected var:",
+                                         choices = NULL,
+                                         multiple = FALSE
+                             )
+                             ),
+                      column(6,
+                             selectInput("strat.value2", label = "Select possible value fot the selected var:",
+                                         choices = NULL,
+                                         multiple = TRUE
+                             ),
+                             )
                     ),
                     tags$hr(),
                     p(h5("Switch to see if the node reach times are different between the two courts")),
@@ -440,23 +459,114 @@ server.careFlow<-function(input,output,session){
 
   observeEvent(input$strat.var,{
     shiny::updateSelectInput(
-      inputId = "strat.value",
+      inputId = "strat.value1",
+      label = "Select possible value fot the selected var:",
+      choices = unique(data_reactive$EventLog[input$strat.var])
+    )
+    shiny::updateSelectInput(
+      inputId = "strat.value2",
       label = "Select possible value fot the selected var:",
       choices = unique(data_reactive$EventLog[input$strat.var])
     )
   })
 
-  CF.strat.plot<-reactive({
-      script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
-                                   stratificationValues = input$strat.value,
-                                   depth= data_reactive$depth,
-                                   abs.threshold = data_reactive$support,
-                                   checkDurationFromRoot = input$strat.time,
-                                   hitsMeansReachAGivenFinalState = input$perc.end,
-                                   finalStateForHits = input$final.state ,
+  observeEvent(input$strat.value1,{
+    shiny::updateSelectInput(
+      inputId = "strat.value2",
+      label = "Select possible value fot the selected var:",
+      choices = unique(data_reactive$EventLog[input$strat.var])[!unique(data_reactive$EventLog[input$strat.var]) %in% input$strat.value1]
+    )
+  })
 
-                                   kindOfGraph = "dot",
-                                   nodeShape = "square")$script
+
+  observeEvent(input$strat.var.type,{
+    if(input$strat.var.type=="Categorical"){
+      shiny::updateSelectInput(
+        inputId = "strat.value",
+        label = "Select possible value fot the selected var:",
+        choices = unique(data_reactive$EventLog[input$strat.var])
+
+      )
+    }
+    else{
+      shiny::updateSelectInput(
+        inputId = "strat.value",
+        label = "Select possible value fot the selected var:",
+        choices = c("only for categorical var")
+      )
+    }
+  })
+
+  CF.strat.plot<-reactive({
+    if(input$strat.var.type=="Categorical"){
+      if(length(input$strat.value2)>1){
+        ObjDL.out<-ObjDL$getData()
+        tmp.csv <- ObjDL.out$original.CSV
+        #MINORE -> 0
+        tmp.csv[which(objDL.out$original.CSV[,input$strat.var] %in% input$strat.value2),input$strat.var]<-0
+        tmp.csv[which(objDL.out$original.CSV[,input$strat.var]%in% input$strat.value2),input$strat.var]<-1
+        #MAGGIORE = ->1
+        tmp.DL <- dataLoader(verbose.mode = FALSE)
+        tmp.DL$load.data.frame(mydata = tmp.csv,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",format.column.date = "%d/%m/%Y")
+
+        tmp.objCFM <- careFlowMiner()
+        tmp.objCFM$loadDataset(inputData = tmp.DL$getData() )
+        script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+                                             stratificationValues = c(0,1),
+                                             depth= data_reactive$depth,
+                                             abs.threshold = data_reactive$support,
+                                             checkDurationFromRoot = input$strat.time,
+                                             hitsMeansReachAGivenFinalState = input$perc.end,
+                                             finalStateForHits = input$final.state ,
+                                             kindOfGraph = "dot",
+                                             nodeShape = "square")$script
+
+      }else{
+        script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+                                             stratificationValues = c(input$strat.value1,input$strat.value2),
+                                             depth= data_reactive$depth,
+                                             abs.threshold = data_reactive$support,
+                                             checkDurationFromRoot = input$strat.time,
+                                             hitsMeansReachAGivenFinalState = input$perc.end,
+                                             finalStateForHits = input$final.state ,
+                                             kindOfGraph = "dot",
+                                             nodeShape = "square")$script
+      }
+
+    }else{
+      mediana <- median(as.numeric(data_reactive$EventLog[,input$strat.var]),na.rm = T)
+
+      ObjDL.out<-ObjDL$getData()
+      tmp.csv <- ObjDL.out$original.CSV
+      #MINORE -> 0
+      tmp.csv[which(objDL.out$original.CSV[,input$strat.var]<mediana),input$strat.var]<-0
+      tmp.csv[which(objDL.out$original.CSV[,input$strat.var]<=mediana),input$strat.var]<-1
+      #MAGGIORE = ->1
+      tmp.DL <- dataLoader(verbose.mode = FALSE)
+      tmp.DL$load.data.frame(mydata = tmp.csv,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",format.column.date = "%d/%m/%Y")
+
+      tmp.objCFM <- careFlowMiner()
+      tmp.objCFM$loadDataset(inputData = tmp.DL$getData() )
+      script<-tmp.objCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+                                           stratificationValues = c(0,1),
+                                           depth= data_reactive$depth,
+                                           abs.threshold = data_reactive$support,
+                                           checkDurationFromRoot = input$strat.time,
+                                           hitsMeansReachAGivenFinalState = input$perc.end,
+                                           finalStateForHits = input$final.state ,
+                                           kindOfGraph = "dot",
+                                           nodeShape = "square")$script
+
+    }
+      # script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+      #                              stratificationValues = input$strat.value,
+      #                              depth= data_reactive$depth,
+      #                              abs.threshold = data_reactive$support,
+      #                              checkDurationFromRoot = input$strat.time,
+      #                              hitsMeansReachAGivenFinalState = input$perc.end,
+      #                              finalStateForHits = input$final.state ,
+      #                              kindOfGraph = "dot",
+      #                              nodeShape = "square")$script
 
       return(script)
 

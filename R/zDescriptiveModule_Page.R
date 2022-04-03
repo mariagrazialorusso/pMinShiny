@@ -124,7 +124,7 @@ server.descr<-function(input,output,session){
                                     mainPanel(
                                       tabsetPanel(
                                         #TAB PANEL1: PLOT THE EVENT DISTRIBUTION
-                                        tabPanel("Event Distribution",
+                                        tabPanel("Event Distribution over events",
                                                  fluidRow(
                                                    column(11,
                                                    ),
@@ -513,6 +513,7 @@ server.descr<-function(input,output,session){
                         input$event.between,
                         input$event.NOT.between,
                         comp.mat = TRUE)
+
     datax<-as.data.frame(matrix.id)
     colnames(datax)[1]<-"ID"
     return(datax)
@@ -540,7 +541,7 @@ server.descr<-function(input,output,session){
                  input$event.between,
                  input$event.NOT.between,
                  comp.mat = FALSE)
-    plot.trace<-plot.timeline.fun(objQOD,id,input$um.time, input$id.legend)
+    plot.trace<-plot.timeline.fun(objQOD,id,input$um.time, input$time.a, input$inf, input$id.legend)
     return(plot.trace)
   })
 

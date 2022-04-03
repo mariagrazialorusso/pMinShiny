@@ -13,13 +13,13 @@ upset_fun<-function(data,chosen,objDL.new){
   objDL.new.export <- objDL.new$getData()
   df<-as.data.frame(objDL.new.export$original.CSV)
   names<-unique(df[,5])
-  upsetMat<-matrix(nrow = length(unique(df[,1])), ncol = length(names))
+  upsetMat<-matrix(nrow = length(unique(df[,2])), ncol = length(names))
   # names<-unique(new_data$events)
   # upsetMat<-matrix(nrow = length(unique(new_data$id)), ncol = length(names))
   colnames(upsetMat)<-names
 
   for(i in c(1:dim(upsetMat)[1])){
-    arr.evt.to.chech <-objDL.new.export$pat.process[[as.character(df$ID[i])]]$EVENT
+    arr.evt.to.chech <-objDL.new.export$pat.process[[as.character(i)]]$EVENT
     # arr.evt.to.chech <-objDL.new.export$pat.process[[as.character(i)]]$events
     for(j in c(1:dim(upsetMat)[2])){
       if(colnames(upsetMat)[j] %in% arr.evt.to.chech){
