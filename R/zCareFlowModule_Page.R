@@ -461,21 +461,34 @@ server.careFlow<-function(input,output,session){
     shiny::updateSelectInput(
       inputId = "strat.value1",
       label = "Select possible value fot the selected var:",
-      choices = unique(data_reactive$EventLog[input$strat.var])
+      choices = unique(data_reactive$EventLog[input$strat.var]),
+      selected = NULL
     )
     shiny::updateSelectInput(
       inputId = "strat.value2",
       label = "Select possible value fot the selected var:",
-      choices = unique(data_reactive$EventLog[input$strat.var])
+      choices = unique(data_reactive$EventLog[input$strat.var]),
+      selected = NULL
     )
   })
 
   observeEvent(input$strat.value1,{
-    shiny::updateSelectInput(
-      inputId = "strat.value2",
-      label = "Select possible value fot the selected var:",
-      choices = unique(data_reactive$EventLog[input$strat.var])[!unique(data_reactive$EventLog[input$strat.var]) %in% input$strat.value1]
-    )
+    if(input$strat.var.type=="Categorical"){
+      shiny::updateSelectInput(
+        inputId = "strat.value2",
+        label = "Select possible value fot the selected var:",
+        choices = unique(data_reactive$EventLog[input$strat.var])[!unique(data_reactive$EventLog[input$strat.var]) %in% input$strat.value1],
+        selected = NULL
+      )
+    }else{
+      shiny::updateSelectInput(
+        inputId = "strat.value2",
+        label = "Select possible value fot the selected var:",
+        choices = c("only for categorical var"),
+        selected = NULL
+      )
+    }
+
   })
 
 
@@ -488,11 +501,18 @@ server.careFlow<-function(input,output,session){
 
       )
     }
-    else{
+    else if (input$strat.var.type=="Numeric"){
       shiny::updateSelectInput(
-        inputId = "strat.value",
+        inputId = "strat.value1",
         label = "Select possible value fot the selected var:",
-        choices = c("only for categorical var")
+        choices = c("only for categorical var"),
+        selected = NULL
+      )
+      shiny::updateSelectInput(
+        inputId = "strat.value2",
+        label = "Select possible value fot the selected var:",
+        choices = c("only for categorical var"),
+        selected = NULL
       )
     }
   })
@@ -503,15 +523,15 @@ server.careFlow<-function(input,output,session){
         ObjDL.out<-ObjDL$getData()
         tmp.csv <- ObjDL.out$original.CSV
         #MINORE -> 0
-        tmp.csv[which(objDL.out$original.CSV[,input$strat.var] %in% input$strat.value2),input$strat.var]<-0
-        tmp.csv[which(objDL.out$original.CSV[,input$strat.var]%in% input$strat.value2),input$strat.var]<-1
+        tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var] %in% input$strat.value2),input$strat.var]<-0
+        tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]%in% input$strat.value1),input$strat.var]<-1
         #MAGGIORE = ->1
         tmp.DL <- dataLoader(verbose.mode = FALSE)
         tmp.DL$load.data.frame(mydata = tmp.csv,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",format.column.date = "%d/%m/%Y")
 
-        tmp.objCFM <- careFlowMiner()
-        tmp.objCFM$loadDataset(inputData = tmp.DL$getData() )
-        script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+        tmp.ObjCFM <- careFlowMiner()
+        tmp.ObjCFM$loadDataset(inputData = tmp.DL$getData() )
+        script<-tmp.ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                              stratificationValues = c(0,1),
                                              depth= data_reactive$depth,
                                              abs.threshold = data_reactive$support,
@@ -539,15 +559,15 @@ server.careFlow<-function(input,output,session){
       ObjDL.out<-ObjDL$getData()
       tmp.csv <- ObjDL.out$original.CSV
       #MINORE -> 0
-      tmp.csv[which(objDL.out$original.CSV[,input$strat.var]<mediana),input$strat.var]<-0
-      tmp.csv[which(objDL.out$original.CSV[,input$strat.var]<=mediana),input$strat.var]<-1
+      tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]<mediana),input$strat.var]<-0
+      tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]>=mediana),input$strat.var]<-1
       #MAGGIORE = ->1
       tmp.DL <- dataLoader(verbose.mode = FALSE)
       tmp.DL$load.data.frame(mydata = tmp.csv,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",format.column.date = "%d/%m/%Y")
 
-      tmp.objCFM <- careFlowMiner()
-      tmp.objCFM$loadDataset(inputData = tmp.DL$getData() )
-      script<-tmp.objCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+      tmp.ObjCFM <- careFlowMiner()
+      tmp.ObjCFM$loadDataset(inputData = tmp.DL$getData() )
+      script<-tmp.ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                            stratificationValues = c(0,1),
                                            depth= data_reactive$depth,
                                            abs.threshold = data_reactive$support,
