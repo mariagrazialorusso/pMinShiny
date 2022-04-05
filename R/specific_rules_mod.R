@@ -91,7 +91,7 @@ ui_regole<-function(id,data,num){
 
 
       column(4,
-             pickerInput(ns("rule"),"Select rule\n",choices = c("mean","min value","max value","last measure","first measure","count","spline"))
+             pickerInput(ns("rule"),"Select rule\n",choices = c("mean","min value","max value","last measure","first measure","count","trend"))
       )
     ),
 
@@ -243,7 +243,7 @@ server_regole<-function(input,output,session,data,num){
         session = session,
         inputId = "rule",
         label = "Select rule",
-        choices = c("mean","min value","max value","last measure","first measure","count","spline"))
+        choices = c("mean","min value","max value","last measure","first measure","count","trend"))
     }
   })
 

@@ -11,7 +11,7 @@ all.xml<<-list()
 all.sRules<<-list()
 shinyApp(ui = fluidPage(
   #Pagina Principale
-  navbarPage("pMining: EventLog Merge Module", id="tabs",
+  navbarPage("pMinShiny: EventLog Enrichment Module", id="tabs",
              tabPanel("Loading EventLog",
                       titlePanel("Event Log Loading"),
                       br(),

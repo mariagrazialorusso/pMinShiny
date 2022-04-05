@@ -25,7 +25,7 @@ spec_setting_ui<-function(id,var.name,var_long_type){
     ),
 
     column(3,
-           pickerInput(ns("rule.new"),"Select rule",choices = c("mean","min value","max value","last measure","first measure","count","spline"), selected = NULL)
+           pickerInput(ns("rule.new"),"Select rule",choices = c("mean","min value","max value","last measure","first measure","count","trend"), selected = NULL)
     ),
 
   )

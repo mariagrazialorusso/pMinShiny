@@ -142,7 +142,7 @@ merge_fun<-function(){
             if(is_empty(val)){
               val<-NULL
             }else{
-              # c("mean","min value","max value","last measure","first measure","count","spline")
+              # c("mean","min value","max value","last measure","first measure","count","trend")
               switch (rule,
                       "mean" = {
                         val<-mean(val)
@@ -162,7 +162,7 @@ merge_fun<-function(){
                       "count"={
                         val<-nrow(sub_path)
                       },
-                      "spline"={
+                      "trend"={
                         if(nrow(sub_path>2)){
                           sub_path$day.numeric = as.numeric(sub_path$day)/(24*60*60)
                           q <- lm(day.numeric ~ value, data=sub_path)

@@ -57,10 +57,15 @@ import_mod_ui<- function(id, tit,flag){
 import_data_server<- function(input,
                               output,
                               session,
-                              name){
+                              name,
+                              flag= FALSE){
   #creating variable Mydata which contains dataframe uploaded by fileInput
   myData <- reactive({
-    inFile <- input$file
+    if(flag){
+      inFile<-NULL
+    }else{
+      inFile <- input$file
+    }
     if (is.null(inFile)) {
       d <- data.frame()
     } else {

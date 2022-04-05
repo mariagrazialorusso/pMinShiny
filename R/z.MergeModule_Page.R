@@ -23,13 +23,15 @@ server<-function(input,output,session){
     tabs=list(),
     event_delete=array(),
     event_density=array(),
-    final_EL=data.frame()
+    final_EL=data.frame(),
+
   )
 
 
   #TAB EVENTLOG: data visualization of eventlog
   observeEvent(input$loadEL,{
     data_reactive$EventLog <- all.data[["EventLog"]]
+    all.data[["Data0"]]<<-NULL
     # data_reactive$EventLog <- loadData("uploadEL.csv")
     if(is_empty(data_reactive$EventLog)){
       sendSweetAlert(
@@ -40,6 +42,9 @@ server<-function(input,output,session){
       )
       data_reactive$EventLog<-data.frame()
     }
+    data_reactive$ancillaryData= list()
+
+
 
 
 
@@ -64,11 +69,22 @@ server<-function(input,output,session){
               target = "Loading EventLog",
               position = "after"
     )
+    #Data Long visualization
+    if(is_empty(data_reactive$ancillaryData)){
+      callModule(import_data_server,"upload0","Data0") #Flag=DATALONG for merge EventLog+Longitudinal data
+    }else{
+      callModule(import_data_server,"upload0","Data0",TRUE) #Flag=DATALONG for merge EventLog+Longitudinal data
+    }
   })
 
 
-  #Data Long visualization
-  callModule(import_data_server,"upload0","Data0") #Flag=DATALONG for merge EventLog+Longitudinal data
+  # #Data Long visualization
+  # if(is_empty(data_reactive$ancillaryData)){
+  #   callModule(import_data_server,"upload0","Data0") #Flag=DATALONG for merge EventLog+Longitudinal data
+  # }else{
+  #   callModule(import_data_server,"upload0","Data0",TRUE) #Flag=DATALONG for merge EventLog+Longitudinal data
+  # }
+
 
   observeEvent(input$add,{
     insertUI(
