@@ -162,8 +162,8 @@ server.careFlow<-function(input,output,session){
       #PREDICTIVE PANEL
       removeTab(inputId = "tabs", target = "")
       insertTab(inputId = "tabs",
-                tabPanel("Predictive CareFlowMiner",
-                         titlePanel("Process Discovery: CareFlowMiner - Predictive Model"),
+                tabPanel("Probabilistic CareFlowMiner",
+                         titlePanel("Process Discovery: CareFlowMiner - Probabilistic Model"),
                          br(),
                          fluidRow(
                            column(12,
@@ -309,6 +309,8 @@ server.careFlow<-function(input,output,session){
      }else{
        col.threshold<-c()
      }
+
+
      cf.graph<-ObjCFM$plotCFGraph(depth = dp,  #PROFONDITA
                                   withPercentages = TRUE,
                                   relative.percentages = TRUE,
@@ -392,7 +394,8 @@ server.careFlow<-function(input,output,session){
 
                     fluidRow(
                       selectInput("strat.var", label = "Select variable for the stratification:",
-                                  choices = colnames(data_reactive$EventLog)[5:length(data_reactive$EventLog)])
+                                  choices = colnames(data_reactive$EventLog)[5:length(data_reactive$EventLog)],
+                                  selected = NULL)
                     ),
 
                     p(h5("Before proceeding with the setting of the stratification parameters,
@@ -451,7 +454,7 @@ server.careFlow<-function(input,output,session){
                   )
                 )
               ),
-              target = "Predictive CareFlowMiner",
+              target = "Probabilistic CareFlowMiner",
               position = "after"
     )
 
