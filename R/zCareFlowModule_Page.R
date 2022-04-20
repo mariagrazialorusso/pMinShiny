@@ -160,7 +160,7 @@ server.careFlow<-function(input,output,session){
       )
 
       #PREDICTIVE PANEL
-      removeTab(inputId = "tabs", target = "")
+      removeTab(inputId = "tabs", target = "Probabilistic CareFlowMiner")
       insertTab(inputId = "tabs",
                 tabPanel("Probabilistic CareFlowMiner",
                          titlePanel("Process Discovery: CareFlowMiner - Probabilistic Model"),
@@ -521,6 +521,13 @@ server.careFlow<-function(input,output,session){
   })
 
   CF.strat.plot<-reactive({
+    if(data_reactive$max_depth){
+      dp<-Inf
+    }else{
+      dp<-data_reactive$depth
+    }
+
+
     if(input$strat.var.type=="Categorical"){
       if(length(input$strat.value2)>1){
         ObjDL.out<-ObjDL$getData()
@@ -536,7 +543,7 @@ server.careFlow<-function(input,output,session){
         tmp.ObjCFM$loadDataset(inputData = tmp.DL$getData() )
         script<-tmp.ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                              stratificationValues = c(0,1),
-                                             depth= data_reactive$depth,
+                                             depth= dp,
                                              abs.threshold = data_reactive$support,
                                              checkDurationFromRoot = input$strat.time,
                                              hitsMeansReachAGivenFinalState = input$perc.end,
@@ -547,7 +554,7 @@ server.careFlow<-function(input,output,session){
       }else{
         script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                              stratificationValues = c(input$strat.value1,input$strat.value2),
-                                             depth= data_reactive$depth,
+                                             depth= dp,
                                              abs.threshold = data_reactive$support,
                                              checkDurationFromRoot = input$strat.time,
                                              hitsMeansReachAGivenFinalState = input$perc.end,
@@ -572,7 +579,7 @@ server.careFlow<-function(input,output,session){
       tmp.ObjCFM$loadDataset(inputData = tmp.DL$getData() )
       script<-tmp.ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                            stratificationValues = c(0,1),
-                                           depth= data_reactive$depth,
+                                           depth= dp,
                                            abs.threshold = data_reactive$support,
                                            checkDurationFromRoot = input$strat.time,
                                            hitsMeansReachAGivenFinalState = input$perc.end,

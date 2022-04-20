@@ -386,7 +386,7 @@ server.descr<-function(input,output,session){
                                         column(12,
                                                selectInput("um.time",
                                                            label = "Select the time scale",
-                                                           choices = c("minutes","hours","days","weeks","months"),
+                                                           choices = c("mins","hours","days","weeks","months"),
                                                            selected = "days"
                                                )
                                         )
@@ -521,7 +521,7 @@ server.descr<-function(input,output,session){
 
 
   output$trace.id<- DT::renderDataTable({
-    if(is.na(matrix_taceid())){
+    if(is.na(matrix_taceid()[1,1])){
       validate("No patient with traces that meet the inherent requirements")
     }
      matrix_taceid()
@@ -546,7 +546,7 @@ server.descr<-function(input,output,session){
   })
 
   output$time.line<-renderPlot({
-    if(is.na(matrix_taceid())){
+    if(is.na(matrix_taceid()[1,1])){
       validate("No patient with traces that meet the inherent requirements")
     }
     plot.traceid()
