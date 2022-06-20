@@ -41,8 +41,8 @@ dict_mod_server<-function(input,
   ns <- session$ns
 
   data_reactive<-reactiveValues(
-    n.gr=array(),
-    gr.box=list()
+    n.gr=array()
+    # gr.box=list()
   )
 
   observeEvent(input$n.group,{
@@ -69,8 +69,6 @@ dict_mod_server<-function(input,
     gr.name()
   })
 
-
-
   gr.list<-reactive({
     tmp<-lapply(1:length(unique(data[,4])), function(lista){
       if(length(unique(data[,4])[[lista]])>1){
@@ -78,18 +76,55 @@ dict_mod_server<-function(input,
       }else{
         name<-unique(data[,4])[[lista]]
       }
-      # if(name %in% input$Dynamic_Bucket[2:length(input$Dynamic_Bucket)]){
-      #   fin.name<-NULL
-      # }else{
-      #   fin.name<- name
-      # }
-      return(name)
+      if(name %in% input$Dynamic_Bucket[2:length(input$Dynamic_Bucket)]){
+        fin.name<-NULL
+      }else{
+        fin.name<- name
+      }
+      return(fin.name)
     })
     return(tmp)
   })
+  #
+  # rank_list_items<-reactive({
+  #   rk<-lapply(2:(input$n.group+1), function(x) {
+  #     if(length(input$Dyanmic_Bucket)<x){
+  #       lb<-NULL
+  #     }else{
+  #       lb<-input$Dyanmic_Bucket[[x]]
+  #     }
+  #     if(is.na(input[[paste0("name.gr",x-1)]]) | input[[paste0("name.gr",x-1)]]==""){
+  #       name<-paste0("unkown group ", x-1)
+  #     }else{
+  #       name<-input[[paste0("name.gr",x-1)]]
+  #     }
+  #     add_rank_list(
+  #       input_id =name,
+  #       text = input[[paste0("name.gr",x-1)]],
+  #       labels = unique(lb)
+  #     )
+  #   })
+  #
+  #   return(rk)
+  # })
 
-  rank_list_items<-reactive({
-    rk<-lapply(2:(input$n.group+1), function(x) {
+  first.group<-reactive({
+    tmp<-lapply(1:length(unique(data[,4])), function(lista){
+      if(length(unique(data[,4])[[lista]])>1){
+        name<-str_c(unique(data[,4])[[lista]],collapse = " ")
+      }else{
+        name<-unique(data[,4])[[lista]]
+      }
+      if(name %in% input$Dynamic_Bucket[2:length(input$Dynamic_Bucket)]){
+        fin.name<-NULL
+      }else{
+        fin.name<- name
+      }
+      return(name)
+      # return(fin.name)
+    })
+
+    rk1<-lapply(2:(input$n.group+1), function(x) {
       if(length(input$Dyanmic_Bucket)<x){
         lb<-NULL
       }else{
@@ -103,37 +138,66 @@ dict_mod_server<-function(input,
       add_rank_list(
         input_id =name,
         text = input[[paste0("name.gr",x-1)]],
-        labels = lb
+        labels = unique(lb)
       )
     })
 
-    return(rk)
+    # rk<-do.call("bucket_list", args = c(
+    #   list(header = "",
+    #        group_name = ns("Dyanmic_Bucket"),
+    #        orientation = "horizontal",
+    #        add_rank_list(
+    #          text = "Events to group",
+    #          labels = tmp,
+    #          input_id = "rank_list_1"
+    #        )
+    #
+    #   ),
+    #   rk1
+    # ))
+
+    return(rk1)
   })
 
 
-
-
-
-
   output$groups<-renderUI({
-    fluidRow(
-      do.call("bucket_list", args = c(
-        list(header = "",
-             group_name = ns("Dyanmic_Bucket"),
-             orientation = "horizontal",
-             add_rank_list(
-                   text = "Events to group",
-                   labels = gr.list(),
-                   input_id = "rank_list_1"
-                 )
-        ),
+    fluidPage(
+      fluidRow(
+        do.call("bucket_list", args = c(
+          list(header = "",
+               group_name = ns("Dyanmic_Bucket"),
+               orientation = "horizontal",
+               add_rank_list(
+                 text = "Events to group",
+                 labels = gr.list(),
+                 input_id = "rank_list_1"
+               )
+          ),
 
-        rank_list_items()
-      )),
+          first.group()
+        )),
+      ),
 
-      plotOutput(ns("evt.dist")),
-      dataTableOutput(ns("bucket_outputs"))
+      fluidRow(
 
+        # do.call("bucket_list", args = c(
+        #   list(header = "",
+        #        group_name = ns("Dyanmic_Bucket"),
+        #        orientation = "horizontal",
+        #        add_rank_list(
+        #              text = "Events to group",
+        #              labels = gr.list(),
+        #              input_id = "rank_list_1"
+        #            )
+        #   ),
+        #
+        #   rank_list_items()
+        # )),
+
+        plotOutput(ns("evt.dist")),
+        DT::dataTableOutput(ns("bucket_outputs")),
+        # textOutput(ns("prova1"))
+      )
     )
   })
 
@@ -157,8 +221,7 @@ dict_mod_server<-function(input,
     return(dic)
   })
 
-
-dist<-reactive({
+  dist<-reactive({
    pat.process<-pat
    df1<-evt.tab(input$Dyanmic_Bucket,unique(data[,4]))
    df<-applyDict(column.name="GROUP" ,
@@ -172,9 +235,11 @@ dist<-reactive({
  })
 
 
-  # output$prova<- renderPrint({input$Dyanmic_Bucket})
-  output$bucket_outputs <- DT::renderDataTable(df(), rownames = FALSE )
-  output$evt.dist<-renderPlot(dist())
+
+output$bucket_outputs <- DT::renderDataTable(df(), rownames = FALSE )
+output$evt.dist<-renderPlot(dist())
+  output$prova1<- renderPrint({first.group()})
+
 
 }
 

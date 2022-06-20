@@ -144,7 +144,7 @@ server.group<-function(input,output,session) {
                              br(),
                              selectInput(inputId = "show.visual", label = "Select the visualization: ",
                                          choices = c("Group Table","Bar Plot"),
-                                         selected = "Group Table"),
+                                         selected = "Bar Plot"),
                              br(),
                              p(h5("You can download the new event log by clicking the",strong("download button ")))
 
