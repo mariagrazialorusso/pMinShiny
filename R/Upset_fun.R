@@ -18,8 +18,20 @@ upset_fun<-function(data,chosen,objDL.new){
   # upsetMat<-matrix(nrow = length(unique(new_data$id)), ncol = length(names))
   colnames(upsetMat)<-names
 
+  # for(i in c(1:dim(upsetMat)[1])){
+  #   arr.evt.to.chech <-objDL.new.export$pat.process[[as.character(i)]]$EVENT
+  #   # arr.evt.to.chech <-objDL.new.export$pat.process[[as.character(i)]]$events
+  #   for(j in c(1:dim(upsetMat)[2])){
+  #     if(colnames(upsetMat)[j] %in% arr.evt.to.chech){
+  #       upsetMat[i,j]<-1
+  #     }else{
+  #       upsetMat[i,j]<-0
+  #     }
+  #   }
+  # }
+
   for(i in c(1:dim(upsetMat)[1])){
-    arr.evt.to.chech <-objDL.new.export$pat.process[[as.character(i)]]$EVENT
+    arr.evt.to.chech <-objDL.new.export$pat.process[[i]]$EVENT
     # arr.evt.to.chech <-objDL.new.export$pat.process[[as.character(i)]]$events
     for(j in c(1:dim(upsetMat)[2])){
       if(colnames(upsetMat)[j] %in% arr.evt.to.chech){
@@ -31,12 +43,35 @@ upset_fun<-function(data,chosen,objDL.new){
   }
 
   upsetData<-as.data.frame(upsetMat)
-  upset(upsetData,nsets = length(names), point.size = 3.5, line.size = 1.8,
-        mainbar.y.label = "Events Intersections",
-        sets.x.label = "Event Type",
-        keep.order = TRUE,
-        mb.ratio = c(0.55, 0.55),
-        order.by = "freq",
-        text.scale = c(1.3, 1.3, 1, 1, 1.7, 1.2))
+  c<-0
+    for(i in c(1:nrow(upsetData))){
+      if(sum(upsetData[i,])>1){
+        c<-c+1
+        print(c)
+      }
+    }
+
+  if(c>0){
+    up.plot<-upset(upsetData,nsets = length(names), point.size = 3.5, line.size = 1.8,
+                   mainbar.y.label = "Events Intersections",
+                   sets.x.label = "Event Type",
+                   keep.order = TRUE,
+                   mb.ratio = c(0.55, 0.55),
+                   order.by = "freq",
+                   text.scale = c(1.3, 1.3, 1, 1, 1.7, 1.2))
+  }else{
+    up.plot<-NULL
+  }
+
+
+
+  # up.plot<-upset(upsetData,nsets = length(names), point.size = 3.5, line.size = 1.8,
+  #       mainbar.y.label = "Events Intersections",
+  #       sets.x.label = "Event Type",
+  #       keep.order = TRUE,
+  #       mb.ratio = c(0.55, 0.55),
+  #       order.by = "freq",
+  #       text.scale = c(1.3, 1.3, 1, 1, 1.7, 1.2))
+  return(up.plot)
 
 }

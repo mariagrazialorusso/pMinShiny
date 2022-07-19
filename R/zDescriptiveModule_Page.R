@@ -7,6 +7,7 @@
 #'@import shinyWidgets
 #'@import DT
 #'@import kableExtra
+#'@import timevis
 
 
 
@@ -43,7 +44,7 @@
 
 server.descr<-function(input,output,session){
   #visualizzazione EventLog
-  tab<-callModule(import_data_server,"uploadEL","EventLog")
+  tab<-callModule(import_data_server_visual,"uploadEL","EventLog")
 
 
   # reactiveValues: initializing data as null data frame
@@ -80,16 +81,13 @@ server.descr<-function(input,output,session){
 
   #TAB EVENTLOG: data visualization of eventlog
   observeEvent(input$loadEL,{
-    data_reactive$EventLog <- all.data[["EventLog"]]
-    objDL.new <<- dataLoader(verbose.mode = FALSE)
-    objDL.new$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
-                              format.column.date = "%Y-%m-%d")
-    objDL.out<<-objDL.new$getData()
+    # null.col<-array(dim = nrow(all.data[["EventLog"]]))
+    df<-cbind(all.data[["EventLog"]])
 
 
 
-    objQOD <<- QOD()
-    objQOD$loadDataset(dataList = objDL.out)
+
+    data_reactive$EventLog <- select(df,"ID","DATE_INI","DATE_END","EVENT")
 
 
     if(is_empty(data_reactive$EventLog)){
@@ -100,7 +98,37 @@ server.descr<-function(input,output,session){
         type = "primary"
       )
       data_reactive$EventLog<-data.frame()
-    }
+    }else if(length(which(colnames(all.data[[1]]) %in% c("ID","DATE_INI","EVENT")))<3){
+      sendSweetAlert(
+        session = session,
+        title = "Error",
+        text = "It is necessary to explicit which columns of the uploaded Event Log contain information about: ID, DATE and EVENT label ",
+        type = "primary"
+      )
+      data_reactive$EventLog<-data.frame()
+
+    }else if(is.na(as.Date(all.data[[1]]$DATE_INI[1], "%Y-%m-%d"))){
+      sendSweetAlert(
+        session = session,
+        title = "Error",
+        text = "Please check the Date Format",
+        type = "primary"
+      )
+      data_reactive$EventLog<-data.frame()
+
+    }else{
+      objDL.new <<- dataLoader(verbose.mode = FALSE)
+      objDL.new$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
+                                format.column.date = "%Y-%m-%d")
+      objDL.out<<-objDL.new$getData()
+
+
+
+      objQOD <<- QOD()
+      objQOD$loadDataset(dataList = objDL.out)
+
+
+
 
 
     #loading data uploaded in the upload section
@@ -408,7 +436,20 @@ server.descr<-function(input,output,session){
                                                            choices = unique(data_reactive$EventLog[,4]),
                                                            multiple = TRUE)
                                                )
-                                      )
+                                      ),
+                                      fluidRow(
+                                        tags$hr(),
+                                        materialSwitch(
+                                          inputId = "more.graph",
+                                          label = "show more graph",
+                                          status = "primary",
+                                          right = TRUE
+                                        )
+                                      ),
+                                      conditionalPanel("output.moregr== 'yes' ",
+                                                       selectInput("id","Select paz or a group of paz",
+                                                                   choices = NULL, multiple = TRUE)
+                                                       )
                                     ),
                                     mainPanel(
                                       tabsetPanel(
@@ -443,7 +484,12 @@ server.descr<-function(input,output,session){
                                                             right = TRUE,
                                                             tooltip = tooltipOptions(title = "Click to more info"))
                                                           )
-                                                 )
+                                                 ),
+                                                 conditionalPanel("output.moregr=='yes",
+                                                                  fluidRow(
+                                                                    timevis::timevisOutput("timeVis.timeline")
+                                                                  )
+                                                                  )
 
                                               )
                                         )
@@ -454,9 +500,30 @@ server.descr<-function(input,output,session){
                          ),
                 target = "EventLog data analysis",
                 position = "after"
-      )
+      )}
     }
 
+  })
+
+  rv.moregr <- reactiveValues(show.moregr = FALSE)
+
+  observeEvent(input$more.graph, ({
+    rv.moregr$show.moregr <- !(rv.moregr$show.moregr)
+  }))
+
+  output$moregr <- renderText({
+    if(!rv.moregr$show.moregr){
+      "yes"
+    } else{
+      "no"
+    }
+  })
+
+  outputOptions(output, "moregr", suspendWhenHidden = FALSE)
+
+  observeEvent(input$more.graph,{
+    shiny::updateSelectInput(inputId = "id",label = "Select paz or a group of paz",
+                      choices = matrix_taceid()[,1])
   })
 
 
@@ -612,7 +679,12 @@ server.descr<-function(input,output,session){
   })
 
   output$upsetplot<-renderPlot({
-    plot_obj_upsetplot()
+    if(is.null(plot_obj_upsetplot())){
+      validate("there are no co-occurring events")
+    }else{
+      plot_obj_upsetplot()
+    }
+
   })
 
   #=================================== Event trace plot (sixth tabPanel: output$traceplot) =================================
@@ -631,6 +703,24 @@ server.descr<-function(input,output,session){
   output$traceplot<-renderPlot({
     plot_obj_traceplot()
   })
+
+
+  timevis.plot<-reactive({
+    id<-input$id
+    if(!is.null(id)){
+      if(length(input$id)==1){
+        plottv<-timeLine.data(id[1],objDL.out,single = TRUE)
+      }else{
+        plottv<-timeLine.data(id,objDL.out,single = FALSE)
+      }
+    }else{
+      plottv<-NULL
+    }
+    return(plottv)
+
+  })
+
+  output$timeVis.timeline<-timevis::renderTimevis(timevis.plot())
 
 }
 

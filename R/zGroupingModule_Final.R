@@ -13,31 +13,6 @@
 
 
 
-
-# library(rlang)
-# library(shiny)
-# library(shinythemes)
-# library(dplyr)
-# library(shinyWidgets)
-# library(DT)
-# library(ggplot2)
-# library(sortable)
-# library(pMineR)
-
-
-
-
-# ui.group<-navbarPage("pMining: Grouping Module", id="tabs",
-#
-#                      tabPanel("Loading Data",
-#                               titlePanel("Data Uploading"),
-#                               br(),
-#                               import_mod_ui("uploadEL","Upload EventLog file",FALSE),
-#                               actionButton("loadEL","Load Event Log",width = '32%') ,
-#                               )
-#                      )
-
-
 server.group<-function(input,output,session) {
 
   tab<-callModule(import_data_server,"uploadEL","EventLog")
@@ -46,13 +21,12 @@ server.group<-function(input,output,session) {
     EventLog = data.frame(),
     pat.process=list(),
     visual=array(),
-    tabs=list()
+    tabs=list(),
+    ObjDL.out =list()
   )
 
   observeEvent(input$loadEL,{
-
     data_reactive$EventLog <- all.data[["EventLog"]]
-    # removeTab(inputId = "tabs", target = "Add Dictionary")
 
     if(is_empty(data_reactive$EventLog)){
       sendSweetAlert(
@@ -66,32 +40,108 @@ server.group<-function(input,output,session) {
       objDL.new <- dataLoader(verbose.mode = FALSE)
       objDL.new$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
                                 format.column.date = "%Y-%m-%d")
+
       obj.out<-objDL.new$getData()
+      data_reactive$ObjDL.out<-obj.out
       data_reactive$pat.process<-obj.out$pat.process
 
-      removeTab(inputId = "tabs", target = "Add Dictionary")
+
+
+
+  ################   ADD DICTIONARY TAB        ###################        ADD DICTIONARY TAB     ######################       ADD DICTIONARY TAB     ##############################################       ADD DICTIONARY TAB      ########################
       insertTab(inputId = "tabs",
                 tabPanel("Add Dictionary",
-                         titlePanel("New Dictionary"),
-                         br(),
-                         dict_mod_ui("dict0", data_reactive$EventLog),
-                         br(),
-                         fluidRow(
-                          column(12,
-                                 actionButton("add",label = "Add new Dictionary")
-                                 )),
-                         fluidRow(
-                          column(12,
-                                 actionButton("apply",label = "Apply Dictionary")
-                                 )
-                         )
 
-                ),
+
+                         ############################# ADD DICTIONARY & APPLY DICT BUTTONS #############################################################
+                         fluidPage(
+                           titlePanel("New Dictionary"),
+                           br(),
+                           dict_mod_ui("dict0", data_reactive$EventLog),
+                           br(),
+                           br(),
+                           fluidRow(
+                             actionButton("add",label = "Add new Dictionary")
+                           ),
+                           br(),
+                           fluidRow(
+                             actionButton("apply",label = "Apply Dictionary")
+                           ),
+                           br(),
+
+                           ################################ SHOW GRAPH PANEL ############################################################################
+                           fluidRow(
+                             tagList(
+                             conditionalPanel(condition = 'output.showpanel == "yes"',
+                                              absolutePanel(
+                                                # top = 20,
+                                                left = 50,
+                                                right = 50,
+                                                bottom = 500,
+                                                width = 900, height = 100,
+                                                draggable = TRUE,
+                                                style = "opacity: 1; z-index: 10;" ,
+                                                wellPanel(style = "overflow-y:scroll;background: #F5F5F5; max-height: 800px; height: 900px",
+                                                          fluidPage(
+                                                            fluidRow(
+                                                              column(11,
+                                                                     titlePanel("Process Model Preview")),
+                                                              column(1,
+                                                                     br(),
+                                                                     actionButton("close", label= "",icon = icon("fas fa-window-close")))
+                                                              ),
+
+                                                            fluidRow(
+                                                              column(12,
+                                                                     tags$hr())
+                                                              ),
+
+                                                            fluidRow(
+                                                              column(12,
+                                                                     sidebarLayout(
+                                                                       sidebarPanel(
+                                                                         selectInput("dict", "Select dictionary",
+                                                                                     choices = NULL),
+                                                                         selectInput("PDalg", "Select algorithm",
+                                                                                     # SCELTA ALGORITMO
+                                                                                     choices = c("CareFlow Miner","FOMM"),
+                                                                                     selected = "FOMM"),
+
+
+
+                                                                         conditionalPanel("input.PDalg == 'CareFlow Miner'",
+                                                                                          tags$hr(),
+                                                                                          numericInput("depth", label = "Select depth:", value = 5),
+                                                                                          numericInput("support", label ="Select support value:", value = 10),
+                                                                                          )
+
+                                                                         ),
+
+                                                                       mainPanel(
+                                                                         grVizOutput("CareFlowGraph")
+
+                                                                         )
+                                                                       ))
+                                                              )
+                                                            )
+                                                          )
+                                                )),
+                             absolutePanel(
+                               actionButton("show.graph", "show CFM graph")))
+                             ),
+
+                           ###################################################################################################################################
+                           br(),
+                           br()
+                         )
+                         ),
                 target = "Loading Data",
                 position = "after")
     }
 
-    callModule(dict_mod_server,"dict0",data_reactive$EventLog, "dict0",data_reactive$pat.process)
+
+    callModule(dict_mod_server,"dict0",data_reactive$EventLog, "dict0",data_reactive$pat.process,objDL.new)
+
 
     observeEvent(input$add,{
       insertUI(
@@ -99,12 +149,130 @@ server.group<-function(input,output,session) {
         where = "beforeBegin",
         ui = dict_mod_ui(paste0("dict", input$add), data_reactive$EventLog)
       )
-      callModule(dict_mod_server,paste0("dict", input$add),data_reactive$EventLog, paste0("dict", input$add),data_reactive$pat.process)
+      callModule(dict_mod_server,paste0("dict", input$add),data_reactive$EventLog, paste0("dict", input$add),data_reactive$pat.process,objDL.new)
     })
 
-    # callModule(dict_mod_server,"dict0",data_reactive$EventLog, paste0("dict", input$add),data_reactive$pat.process)
 
     })
+
+####################################################################################################################################################################################################################################################################################
+
+
+
+
+  ########## SHOW GRAPH SERVER LOGIC  ########## SHOW GRAPH SERVER LOGIC  ########## SHOW GRAPH SERVER LOGIC  ########## SHOW GRAPH SERVER LOGIC  ########## SHOW GRAPH SERVER LOGIC#####################################
+  rv.CFMgr <- reactiveValues(show.panel = FALSE,
+                             PD.alg = ""
+                             )
+
+  observeEvent(input$show.graph, ({
+    rv.CFMgr$show.panel <- !(rv.CFMgr$show.panel)
+    if(is_empty(all.dict)){
+      sendSweetAlert(
+        session = session,
+        title = "Error",
+        text = "no dictionaries saved: create your new dictionary, save it with the 'save dictionary' button and then continue with the 'apply dictionary' button",
+        type = "primary"
+      )
+    }else{
+      updateSelectInput(inputId = "dict", "Select dictionary",
+                        choices =  c("Plase select a dictionary",unlist(dict.names, recursive = TRUE, use.names = FALSE)),
+                        selected = "Plase select a dictionary",
+                        session = session)
+
+    }
+  }))
+
+
+  observeEvent(input$close,{
+    rv.CFMgr$show.panel <- !(rv.CFMgr$show.panel)
+  })
+
+  output$showpanel <- renderText({
+    if(rv.CFMgr$show.panel){
+      "yes"
+    } else{
+      "hidded"
+    }
+  })
+
+  outputOptions(output, "showpanel", suspendWhenHidden = FALSE)
+
+  # observeEvent(input$PD.alg,{
+  #   rv.CFMgr$PD.alg<-input$PD.alg
+  # })
+  #
+  # alg<-reactive({
+  #   a<- ""
+  #     switch (rv.CFMgr$PD.alg,
+  #             "CareFlow Miner" = a<-"CFM",
+  #             "FOMM"           = a<-"FOMM"
+  #     )
+  #   return(a)
+  # })
+  #
+  # output$PD.al <- renderText({
+  #   alg()
+  # })
+  #
+  # outputOptions(output, "PD.al", suspendWhenHidden = FALSE)
+
+
+
+
+  CFgraph<-reactive({
+    if(input$dict == "Plase select a dictionary"){
+      cf.graph<-NULL
+    }else {
+      df1<-evt.tab(all.dict[[which(dict.names %in% input$dict)]],unique(all.data[[1]][,4]))
+      df<-applyDict(column.name="GROUP" ,
+                    dict.name = 'main',
+                    column.event.name= "EVENT",
+                    data_reactive$pat.process,
+                    param.EVENTName="EVENT",
+                    df1)[,2:6]
+      ObjDL<-dataLoader(verbose.mode = FALSE)
+      ObjDL$load.data.frame(mydata =df ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
+                            format.column.date = "%d/%m/%Y")
+      out<-ObjDL$getData()
+      ObjCFM<-careFlowMiner(verbose.mode = FALSE)
+      ObjCFM$loadDataset(inputData = out)
+      cf.graph<-ObjCFM$plotCFGraph(depth =input$depth,  #PROFONDITA
+                                   abs.threshold = input$support, #support
+                                   kindOfGraph = "dot",
+                                   nodeShape = "square")$script
+    }
+
+    return(cf.graph)
+  })
+
+
+  output$CareFlowGraph<- renderGrViz({
+    if(is.null(CFgraph())){
+      validate("In this section you can see a preview of the graphs generated by applying a spcific process discovery algorithm to the selected dictionary.
+               Please select the dictionary and the type of PD algorithm (and its required parameters). The operation may take a few moments")
+    }else{
+      grViz(CFgraph())
+    }
+  })
+
+
+ ############################################################################################################################################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ######################       APPLY DICTIONARY TAB     ##############################       APPLY DICTIONARY TAB     #################################       APPLY DICTIONARY TAB     ########################       APPLY DICTIONARY TAB      ##############################       APPLY DICTIONARY TAB     #################
+
 
 
   observeEvent(input$apply,{
@@ -150,7 +318,6 @@ server.group<-function(input,output,session) {
 
                              ),
 
-
                            mainPanel(
                              uiOutput("dict.tabs")
                            )
@@ -163,16 +330,12 @@ server.group<-function(input,output,session) {
 
     }
 
-
-
-
-
-
   })
+
+
 
   output$dict.tabs<-renderUI({
     tagList(
-      # do.call(tabsetPanel,tab)
       do.call(tabsetPanel,data_reactive$tabs)
     )
   })
@@ -194,93 +357,22 @@ server.group<-function(input,output,session) {
     data_reactive$tabs<-tab
   })
 
-  # tabs<-reactive({
-  #   tab<-list()
-  #   for (i in c(1:length(all.dict))){
-  #     tab[[i]]<-tabPanel(paste0(dict.names[[i]]),
-  #                        group_visual_mod(paste0("visual",i))
-  #     )
-  #   }
-  #
-  #   lapply(1:length(all.dict), function(i){
-  #     callModule(group_visual_server,
-  #                paste0("visual",i),data_reactive$EventLog, i,data_reactive$pat.process, data_reactive$visual)
-  #   })
-  #   return(tab)
-  # })
+
+#############################################################################################################################################################################################################################################################################################################################################
+
+
+
+
+
+
 }
 
-#summary of new groups
-# evt.tab<-function(gruppi,eventi){
-#   #gruppi<-list
-#   #eventi<-array
-#   gru<-rep("",length(eventi))
-#   df<-data.frame(eventi,gru)
-#   names(df)<-c("EVENT", "GROUP")
-#
-#   tmp<-lapply(1:length(eventi), function(evento){
-#     for(i in c(2:length(gruppi))){
-#       if(eventi[evento] %in% gruppi[[i]]){
-#         gr<-names(gruppi)[i]
-#
-#         break
-#       }else{
-#         gr<-eventi[evento]
-#       }
-#     }
-#     return(gr)
-#   })
-#   tmp<-lapply(tmp, function(x) if(is.null(x)) NA else x)
-#   df[,2]<-unlist(tmp)
-#   df<-subset(df,!is.na(df[,2]))
-#   return(df)
-# }
 
 
 
 
 
-# #CREATE DICTIONARY FUNCTION
-# tab.group.fun<-function(group.list,arr.eventi){
-#   gruppi<-rep("",length(arr.eventi))
-#   df<-data.frame(arr.eventi,gruppi)
-#   names(df)<-c("EVENT", "GROUP")
-#   if(!is_empty(group.list)){
-#     tmp<-lapply(1:nrow(df),function(riga){
-#       for(i in c(1:length(group.list))){
-#         if(df[riga,1] %in% group.list[[i]]){
-#           gr<-names(group.list[i])
-#           break
-#         }else{
-#           gr<-df[riga,1]
-#         }
-#       }
-#       return(gr)
-#     })
-#     tmp<-lapply(tmp, function(x) if(is.null(x)) NA else x)
-#     df[,2]<-unlist(tmp)
-#     df<-subset(df,!is.na(df[,2]))
-#   }
-#   return(df)
-# }
 
-# tmp<-lapply(1:length(x), function(lista){
-#   if(length(x[[lista]])>1){
-#     name<-str_c(x[[lista]],collapse = " ")
-#   }else{
-#     name<-x[[lista]]
-#   }
-#   return(name)
-# })
-
-
-# #LAUNCH FUN
-# group.mod<-function(){
-#   all.data<<-list()
-#   dict.names<<-list()
-#   all.dict<<-list()
-#   shinyApp(ui.group, server.group)
-# }
 
 
 

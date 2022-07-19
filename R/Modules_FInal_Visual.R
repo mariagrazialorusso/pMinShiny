@@ -6,7 +6,7 @@
 #'@import DT
 
 
-import_mod_ui<- function(id, tit,flag,col_setting=FALSE){
+import_mod_ui_visual<- function(id, tit,flag,col_setting=FALSE){
   #flag=TRUE-->Merge Module, it is necessary to select a key for the uploaded data set
   #flag=FALSE-->Visualization module
   ns<-NS(id)
@@ -35,13 +35,13 @@ import_mod_ui<- function(id, tit,flag,col_setting=FALSE){
                    selected = '"'),
 
       conditionalPanel(condition = "output.showswich =='yes'", ns= ns,
-        tags$hr(),
-        materialSwitch(
-          inputId = ns("date.format"),
-          label = "Select Date Format (default: yyyy-mm-dd)",
-          status = "primary",
-          right = TRUE
-        ),
+                       tags$hr(),
+                       materialSwitch(
+                         inputId = ns("date.format"),
+                         label = "Select Date Format (default: yyyy-mm-dd)",
+                         status = "primary",
+                         right = TRUE
+                       ),
       ),
 
       conditionalPanel(condition = 'output.showdatef == "yes"', ns = ns ,
@@ -56,7 +56,7 @@ import_mod_ui<- function(id, tit,flag,col_setting=FALSE){
                                             choices= c("-","/"),
                                             selected= "-",
                                 )
-                                )
+                         )
 
                        ),
                        fluidRow(
@@ -65,31 +65,31 @@ import_mod_ui<- function(id, tit,flag,col_setting=FALSE){
                                             choices= c("01-12","Jan","January"),
                                             selected= "01-12"
                                 )
-                                ),
+                         ),
                          column(4,
                                 selectInput(ns("year"),"year format",
                                             choices= c("two digit (07)","four digit (2007)"),
                                             selected= "four digit (2007)"
                                 )
-                                ),
+                         ),
                          column(4,
                                 selectInput(ns("day"),"day format",
                                             choices= c("01-31"),
                                             selected= "01-31"
                                 )
-                                )
+                         )
                        ),
                        fluidRow(
 
-                           column(4,
-                                  p(strong("  Selected Date format:"))
-                                  ),
-                           column(4,
-                                  textOutput(ns("ex.date"))
-                                  ),
-                           column(4,
-                                  actionButton(ns("save.date"), "Save format")
-                                  )
+                         column(4,
+                                p(strong("  Selected Date format:"))
+                         ),
+                         column(4,
+                                textOutput(ns("ex.date"))
+                         ),
+                         column(4,
+                                actionButton(ns("save.date"), "Save format")
+                         )
 
 
                          # mainPanel(
@@ -127,7 +127,7 @@ import_mod_ui<- function(id, tit,flag,col_setting=FALSE){
 
 
 
-import_data_server<- function(input,
+import_data_server_visual<- function(input,
                               output,
                               session,
                               name,
@@ -136,7 +136,9 @@ import_data_server<- function(input,
   data_re<-reactiveValues(
     id = c(),
     date = c(),
-    event = c()
+    event = c(),
+    date_end=c(),
+    ev.type= c()
 
   )
 
@@ -211,69 +213,108 @@ import_data_server<- function(input,
         )
       ),
       fluidRow(
-       column(12,
-              tags$hr(),
-              p(h4("Variable Mapping"))
-              )
+        column(12,
+               tags$hr(),
+               p(h4("Variable Mapping"))
+        )
 
       ),
       fluidRow(
-          column(4,
-                 pickerInput(
-                   inputId =ns("ID"),
-                   label = "ID",
-                   choices = colnames(myData()),
-                   multiple = FALSE,
-                   options = list(
-                     title = "select ID")
-                 )
-          ),
-          column(4,
-                 pickerInput(
-                   inputId =ns("date"),
-                   label = "DATE",
-                   choices = colnames(myData()),
-                   multiple = FALSE,
-                   options = list(
-                     title = "select DATE")
-                 )
-          ),
-          column(4,
-                 pickerInput(
-                   inputId =ns("event"),
-                   label = "EVENT",
-                   choices = colnames(myData()),
-                   multiple = FALSE,
-                   options = list(
-                     title = "select Event")
-                 )
-          )
+        column(4,
+               pickerInput(
+                 inputId =ns("ID"),
+                 label = "ID",
+                 choices = colnames(myData()),
+                 multiple = FALSE,
+                 options = list(
+                   title = "select ID")
+               )
         ),
+        column(4,
+               pickerInput(
+                 inputId =ns("date"),
+                 label = "DATE",
+                 choices = colnames(myData()),
+                 multiple = FALSE,
+                 options = list(
+                   title = "select DATE")
+               )
+        ),
+        column(4,
+               pickerInput(
+                 inputId =ns("event"),
+                 label = "EVENT",
+                 choices = colnames(myData()),
+                 multiple = FALSE,
+                 options = list(
+                   title = "select Event")
+               )
+        )
+      ),
+      fluidRow(
+        column(12,
+               br()
+               )
+      ),
 
-        fluidRow(
-          column(4,
-                 actionButton(ns("reload"), label= "Reset"),
-                 actionButton(ns("save"), label= "Save")
-                 # actionBttn(
-                 #   inputId = ns("reload"),
-                 #   label = NULL,
-                 #   style = "minimal",
-                 #   color = "primary",
-                 #   icon = icon("rotate-left")
-                 # ),
-                 # actionBttn(
-                 #   inputId = ns("save"),
-                 #   label = "SAVE",
-                 #   style = "minimal",
-                 #   color = "primary"
-                 # )
-                 # actionButton(ns("reload"),"RELOAD"),
-                 # actionButton(ns("save_col"),"SAVE")
-          ),
-          # column(3,
-          #        actionButton(ns("save_col"),"SAVE")
-          # )
+      fluidRow(
+        column(4,offset = 4,
+               radioButtons(ns("ev.type"), tags$span(style="color: black;","Time stamp:"),
+                            choices = c("Punctual Event",
+                                        "Not Punctual Event"),
+                            selected = "Punctual Event"),
+
+               ),
+        column(4,
+
+               conditionalPanel("output.end_typ== 'yes'", ns=ns,
+                                pickerInput(
+                                  inputId =ns("date_end"),
+                                  label = "DATE_END",
+                                  choices = c(colnames(myData()), "to next event"),
+                                  multiple = FALSE,
+                                  options = list(
+                                    title = "select DATE_END")
+                                )
+                                )
+
+
+               # pickerInput(
+               #   inputId =ns("date_end"),
+               #   label = "DATE_END",
+               #   choices = c(colnames(myData()), "to next event"),
+               #   multiple = FALSE,
+               #   options = list(
+               #     title = "select DATE_END")
+               # )
+               )
+
+      ),
+
+      fluidRow(
+        column(4,
+               actionButton(ns("reload"), label= "Reset"),
+               actionButton(ns("save"), label= "Save")
+               # actionBttn(
+               #   inputId = ns("reload"),
+               #   label = NULL,
+               #   style = "minimal",
+               #   color = "primary",
+               #   icon = icon("rotate-left")
+               # ),
+               # actionBttn(
+               #   inputId = ns("save"),
+               #   label = "SAVE",
+               #   style = "minimal",
+               #   color = "primary"
+               # )
+               # actionButton(ns("reload"),"RELOAD"),
+               # actionButton(ns("save_col"),"SAVE")
         ),
+        # column(3,
+        #        actionButton(ns("save_col"),"SAVE")
+        # )
+      ),
       fluidRow(
         tags$hr()
       )
@@ -316,6 +357,7 @@ import_data_server<- function(input,
     data_re$id<-c()
     data_re$data<-c()
     data_re$event<-c()
+    data_re$date_end<-c()
     updatePickerInput(
       session = session,
       inputId ="event",
@@ -336,9 +378,18 @@ import_data_server<- function(input,
       session = session,
       inputId ="date",
       label = "DATE",
-      choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$id)],
+      choices = colnames(myData()),
       options = list(
         title = "select DATE")
+    )
+
+    updatePickerInput(
+      session = session,
+      inputId ="date_end",
+      label = "DATE END",
+      choices = c(colnames(myData()), "to the next event"),
+      options = list(
+        title = "select Date_End")
     )
 
 
@@ -361,13 +412,51 @@ import_data_server<- function(input,
       colnames(all.data[[1]])[id.ind]<<-"ID"
       colnames(all.data[[1]])[date.ind]<<-"DATE_INI"
       colnames(all.data[[1]])[event.ind]<<-"EVENT"
+
+      if(data_re$ev.type != "Punctual Event"){
+        if(is.null(data_re$date_end) || data_re$date_end == ""){
+          sendSweetAlert(
+            session = session,
+            title = "Error in Variable Mapping:",
+            text = "Please enter a value for DATE_END",
+            type = "primary"
+          )
+        }else if(data_re$date_end!= "to the next event"){
+          id.date_end<-which(colnames(myData())==data_re$date_end)
+          colnames(all.data[[1]])[id.date_end]<<-"DATE_END"
+        }else{
+          df<-all.data[[1]][with(all.data[[1]], order(ID,DATE_INI)), ]
+          tmp<-lapply(unique(df$ID), function(ID){
+            sub.pat<-df[which(df$ID==ID),]
+            tmp1<-lapply(c(1:nrow(sub.pat)),function(riga){
+              if(riga< nrow(sub.pat)){
+                sub.pat[riga,"DATE_END"]<-sub.pat[riga+1,"DATE_INI"]
+              }else{
+                sub.pat[riga,"DATE_END"]<-sub.pat[riga,"DATE_INI"]
+              }
+            })
+            new.de<-unlist(tmp1)
+            sub.pat$DATE_END<-new.de
+            return(sub.pat)
+
+          })
+          df<-do.call("rbind", tmp)
+          all.data[[1]]<<-df
+        }
+
+      }else{
+        all.data[[1]][,"DATE_END"]<<-all.data[[1]]$DATE_INI
+
+      }
+
     }
 
 
   })
 
- ######################################################### OBSERVE ID ########################################################
+  ######################################################### OBSERVE ID ########################################################
   observeEvent(input$ID,{
+    print(data_re$date_end)
 
     if(!is.null(input$file)){
       data_re$id<-input$ID
@@ -377,7 +466,7 @@ import_data_server<- function(input,
           session = session,
           inputId ="event",
           label = "EVENT",
-          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$id)],
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$id, data_re$date_end)],
           options = list(
             title = "select Event")
         )
@@ -388,10 +477,22 @@ import_data_server<- function(input,
           session = session,
           inputId ="date",
           label = "DATE",
-          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$id, data_re$event)],
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$id, data_re$event, data_re$date_end)],
           options = list(
             title = "select Date")
         )
+      }
+
+      if(is.null(data_re$date_end) || data_re$date_end=="" ){
+        updatePickerInput(
+          session = session,
+          inputId ="date_end",
+          label = "DATE END",
+          choices = c(colnames(myData()),"to the next event")[!colnames(myData()) %in% c(data_re$id, data_re$event,data_re$date)],
+          options = list(
+            title = "select Date_End")
+        )
+
       }
     }
   })
@@ -408,21 +509,12 @@ import_data_server<- function(input,
 
 
     if(!is.null(input$file)){
-      # print(colnames(myData()))
-      #
-      # ind<-which(colnames(myData())==input$date)
-      # if(!is.null(input$date) & identical(ind,integer(0))){
-      #   print("aaaaa")
-      # }
-      # colnames(all.data[[1]])[ind]<<-"DATE_INI"
-      # print(ind)
-
       if(is.null(data_re$event) || data_re$event==""){
         updatePickerInput(
           session = session,
           inputId ="event",
           label = "EVENT",
-          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$id)],
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$id, data_re$date_end)],
           options = list(
             title = "select Event")
         )
@@ -432,7 +524,7 @@ import_data_server<- function(input,
           session = session,
           inputId ="date",
           label = "DATE",
-          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$id, data_re$date)],
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$id, data_re$date,data_re$date_end)],
           options = list(
             title = "select Date")
         )
@@ -443,10 +535,22 @@ import_data_server<- function(input,
           session = session,
           inputId ="ID",
           label = "ID",
-          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$event)],
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$event,data_re$date_end)],
           options = list(
             title = "select ID")
         )
+      }
+
+      if(is.null(data_re$date_end) || data_re$date_end=="" ){
+        updatePickerInput(
+          session = session,
+          inputId ="date_end",
+          label = "DATE END",
+          choices = c(colnames(myData()),"to the next event")[!colnames(myData()) %in% c(data_re$id, data_re$event,data_re$date)],
+          options = list(
+            title = "select Date_End")
+        )
+
       }
     }
   })
@@ -464,7 +568,7 @@ import_data_server<- function(input,
           session = session,
           inputId ="date",
           label = "DATE",
-          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$id, data_re$event)],
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$id, data_re$event,data_re$date_end)],
           options = list(
             title = "select Date")
         )
@@ -476,11 +580,24 @@ import_data_server<- function(input,
           session = session,
           inputId ="ID",
           label = "ID",
-          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$event)],
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$event, data_re$date_end)],
           options = list(
             title = "select ID")
         )
       }
+
+      if(is.null(data_re$date_end) || data_re$date_end=="" ){
+        updatePickerInput(
+          session = session,
+          inputId ="date_end",
+          label = "DATE END",
+          choices = c(colnames(myData()),"to the next event")[!colnames(myData()) %in% c(data_re$id, data_re$event,data_re$date)],
+          options = list(
+            title = "select Date_End")
+        )
+
+      }
+
     }
   })
 
@@ -488,54 +605,52 @@ import_data_server<- function(input,
 
 
 
-  # observeEvent(input$id,{
-  #   if(!is.null(input$file)){
-  #     ind<-which(colnames(all.data[[1]])==input$id[1])
-  #     if(!is.null(input$id) & identical(ind,integer(0))){
-  #       print(colnames(myData()))
-  #
-  #       colnames(all.data[[1]])<<-colnames(myData())
-  #
-  #     }
-  #
-  #     colnames(all.data[[1]])[which(colnames(all.data[[1]])==input$id[1])]<<-"ID"
-  #     print(colnames(myData()))
-  #
-  #   }
-  #
-  # })
-  #
-  # observeEvent(input$data_ini,{
-  #   if(!is.null(input$file)){
-  #     ind<-which(colnames(all.data[[1]])==input$data_ini[1])
-  #     if(!is.null(input$data_ini) & identical(ind,integer(0))){
-  #       colnames(all.data[[1]])<<-colnames(myData())
-  #
-  #       print(colnames(myData()))
-  #
-  #     }
-  #
-  #     colnames(all.data[[1]])[which(colnames(all.data[[1]])==input$data_ini[1])]<<-"DATE_INI"
-  #
-  #
-  #     print( colnames(all.data[[1]]))
-  #     rv.showswich$show.showswich <- !(rv.showswich$show.showswich)
-  #
-  #   }
-  # })
-  #
-  # observeEvent(input$event,{
-  #   if(!is.null(input$file)){
-  #     ind<-which(colnames(all.data[[1]])==input$event[1])
-  #     if(!is.null(input$event) & identical(ind,integer(0))){
-  #       colnames(all.data[[1]])<<-colnames(myData())
-  #     }
-  #     colnames(all.data[[1]])[which(colnames(all.data[[1]])==input$event[1])]<<-"EVENT"
-  #     print(colnames(all.data[[1]]))
-  #
-  #   # colnames(all.data[[1]])[which(colnames(all.data[[1]])==input$event[1])]<<-"EVENT"
-  #   }
-  # })
+
+
+
+
+
+  ######################################################### OBSERVE DATE_END ########################################################
+  observeEvent(input$date_end,{
+
+    if(!is.null(input$file)){
+      data_re$date_end<-input$date_end
+
+      if(is.null(data_re$event) || data_re$event==""){
+        updatePickerInput(
+          session = session,
+          inputId ="event",
+          label = "EVENT",
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date, data_re$id,data_re$date_end)],
+          options = list(
+            title = "select Event")
+        )
+      }
+
+      if(is.null(data_re$date) || data_re$date=="" ){
+        updatePickerInput(
+          session = session,
+          inputId ="date",
+          label = "DATE",
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$id, data_re$event,data_re$date_end)],
+          options = list(
+            title = "select Date")
+        )
+      }
+
+      if(is.null(data_re$id) || data_re$id=="" ){
+        updatePickerInput(
+          session = session,
+          inputId ="ID",
+          label = "ID",
+          choices = colnames(myData())[!colnames(myData()) %in% c(data_re$date_end, data_re$event,data_re$date)],
+          options = list(
+            title = "select ID")
+        )
+
+      }
+    }
+  })
 
 
   #############################    CONDITION SWITCH    #################################
@@ -553,6 +668,36 @@ import_data_server<- function(input,
 
   outputOptions(output, "showswich", suspendWhenHidden = FALSE)
   ########################################################################################
+
+  #############################    CONDITION DATE END   #################################
+  rv.end_type <- reactiveValues(et= FALSE)
+
+
+  # radioButtons(ns("ev.type"), tags$span(style="color: black;","Time stamp:"),
+  #              choices = c("Punctual Event" = 1,
+  #                          "Not Punctual Event" = 2),
+  #              selected = 1),
+
+  observeEvent(input$ev.type,{
+    data_re$ev.type=input$ev.type
+    if(input$ev.type== "Punctual Event"){
+      rv.end_type$et= FALSE
+    }else{
+      rv.end_type$et= TRUE
+    }
+  })
+
+  output$end_typ <- renderText({
+    if(rv.end_type$et){
+      "yes"
+    } else{
+      "no"
+    }
+  })
+
+  outputOptions(output, "end_typ", suspendWhenHidden = FALSE)
+  ########################################################################################
+
 
 
   ############################### CONDITION DATE FORMAT #################################
@@ -800,8 +945,6 @@ import_data_server<- function(input,
   output$ex.date<-renderText(date()[1])
 
   observeEvent(input$save.date,{
-
-
     if(colnames(all.data[[1]])[which(colnames(myData())==data_re$date)]!="DATE_INI"){
       sendSweetAlert(
         session = session,

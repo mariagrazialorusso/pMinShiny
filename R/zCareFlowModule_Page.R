@@ -12,37 +12,10 @@
 
 
 
-
-
-# library(shiny)
-# library(shinythemes)
-# library(dplyr)
-# library(shinyWidgets)
-# library(DT)
-# library(rlang)
-# library(shinybusy)
-# library(pMineR)
-
-# ui.careFlow<-fluidPage(
-#
-#     #Pagina Principale
-#     navbarPage("pMining: CareFlow Mining", id="tabs",
-#                tabPanel("Loading EventLog",
-#                         titlePanel("EventLog Uploading"),
-#                         br(),
-#                         import_mod_ui("uploadEL","Upload EventLog file",FALSE),
-#                         actionButton("loadEL","Load Event Log",width = '32%') ,
-#                )
-#     )
-#   )
-
-
-
-
-
 server.careFlow<-function(input,output,session){
   #visualizzazione EventLog
   tab<-callModule(import_data_server,"uploadEL","EventLog")
+
 
 
   # reactiveValues: initializing data as null data frame
@@ -65,6 +38,23 @@ server.careFlow<-function(input,output,session){
         session = session,
         title = "Error",
         text = "Load your EventLog, then press 'Load Event Log'  button",
+        type = "primary"
+      )
+      data_reactive$EventLog<-data.frame()
+    }else if(length(which(colnames(all.data[[1]]) %in% c("ID","DATE_INI","EVENT")))<3){
+      sendSweetAlert(
+        session = session,
+        title = "Error",
+        text = "It is necessary to explicit which columns of the uploaded Event Log contain information about: ID, DATE and EVENT label ",
+        type = "primary"
+      )
+      data_reactive$EventLog<-data.frame()
+
+    }else if(is.na(as.Date(all.data[[1]]$DATE_INI[1], "%Y-%m-%d"))){
+      sendSweetAlert(
+        session = session,
+        title = "Error",
+        text = "Please check the Date Format",
         type = "primary"
       )
       data_reactive$EventLog<-data.frame()
@@ -394,7 +384,7 @@ server.careFlow<-function(input,output,session){
 
                     fluidRow(
                       selectInput("strat.var", label = "Select variable for the stratification:",
-                                  choices = colnames(data_reactive$EventLog)[5:length(data_reactive$EventLog)],
+                                  choices = colnames(data_reactive$EventLog)[!(colnames(data_reactive$EventLog) %in% c("ID","DATE_INI","EVENT"))],
                                   selected = NULL)
                     ),
 
@@ -603,7 +593,7 @@ server.careFlow<-function(input,output,session){
   })
 
   output$CF.strat<-renderGrViz({
-    grViz(CF.strat.plot())
+    grViz(CF.strat.plot(),env=parent.frame())
   })
 
 

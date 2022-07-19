@@ -12,7 +12,7 @@ visual.mod<-function(){
                  tabPanel("Loading Data",
                           titlePanel("Data Uploading"),
                           br(),
-                          import_mod_ui("uploadEL","Upload EventLog file",FALSE),
+                          import_mod_ui_visual("uploadEL","Upload EventLog file",FALSE, col_setting=TRUE),
                           actionButton("loadEL","Load Event Log",width = '32%') ,
                  )
       )

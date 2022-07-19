@@ -4,7 +4,7 @@
 \alias{import_mod_ui}
 \title{module for data loading}
 \usage{
-import_mod_ui(id, tit, flag)
+import_mod_ui(id, tit, flag, col_setting = FALSE)
 }
 \description{
 module for data loading
