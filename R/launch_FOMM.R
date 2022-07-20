@@ -1,3 +1,15 @@
+#'@title FOMM module fun
+#'
+#'@import shiny
+#'@import dplyr
+#'@import shinyWidgets
+#'@import DT
+#'@export
+
+
+
+
+
 FOMM.mod<-function(){
   all.data<<-list()
   shinyApp(ui =fluidPage(

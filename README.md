@@ -1,8 +1,6 @@
 # pMinShiny
 
-## Preliminary Operations: install pMinShiny from GitHub
-
-To install the package: 
+## To install the package: 
 
 ```
 library("remotes")
@@ -20,9 +18,6 @@ library(pMinShiny)
 ## Visualization of user interfaces
 
 At this point you will be able to view  the modules by running the following instructions from the command line:
-- "visual.mod()" command will allow you to use the descriptive analysis module;
-- "careFlow.mod()" command will display the UI for the Process Discovery with CFM
-
 
 ```
 visual.mod()
