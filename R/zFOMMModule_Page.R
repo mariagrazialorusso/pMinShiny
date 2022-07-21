@@ -23,6 +23,7 @@ server.FOMM<-function(input,output,session){
     EventLog=data.frame(),
     th = c(),  #threshold
     al = c(),  #autoloops
+    FOMM = c()
   )
 
 
@@ -130,12 +131,13 @@ server.FOMM<-function(input,output,session){
       FOMM<-firstOrderMarkovModel(parameters.list = param)
       FOMM$loadDataset(dataList = ObjDL$getData())
       FOMM$trainModel()
-      fomm.plot<-FOMM$plot()
+      data_reactive$FOMM<-FOMM
+      fomm.plot<-FOMM$getModel(kindOfOutput = "grViz")
       return(fomm.plot)
     })
 
     output$CareFlowGraph<-renderGrViz({
-      fomm.graph()
+      grViz(fomm.graph())
     })
 
 
@@ -187,6 +189,7 @@ server.FOMM<-function(input,output,session){
 
 
     surv<-reactive({
+      FOMM<-data_reactive$FOMM
       KM <- FOMM$KaplanMeier(fromState = input$event.from,toState = input$event.to, UM = "days")
       return(plot( KM$KM, main="Covid_BEGIN -> Covid_END", xlab="days",ylab="p"))
     })

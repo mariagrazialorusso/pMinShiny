@@ -14,6 +14,7 @@ trace.id<-function(Obj.QOD, event.start,event.end, time.b, time.a, inf.flag,um.t
     time.r<-c(time.b,time.a)
   }
 
+
   arr.ID <- Obj.QOD$query(from = event.start,
                           to = event.end,
                           UM= um.time,

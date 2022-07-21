@@ -456,7 +456,7 @@ import_data_server_visual<- function(input,
 
   ######################################################### OBSERVE ID ########################################################
   observeEvent(input$ID,{
-    print(data_re$date_end)
+
 
     if(!is.null(input$file)){
       data_re$id<-input$ID

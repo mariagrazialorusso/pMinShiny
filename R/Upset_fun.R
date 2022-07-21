@@ -47,7 +47,7 @@ upset_fun<-function(data,chosen,objDL.new){
     for(i in c(1:nrow(upsetData))){
       if(sum(upsetData[i,])>1){
         c<-c+1
-        print(c)
+
       }
     }
 

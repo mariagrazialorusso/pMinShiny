@@ -8,6 +8,7 @@
 #'@import DT
 #'@import kableExtra
 #'@import timevis
+#'@import pMineR
 
 
 
