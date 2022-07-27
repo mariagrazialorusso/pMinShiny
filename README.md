@@ -24,3 +24,6 @@ visual.mod()
 careFlow.mod()
 
 ```
+<br>
+
+***Useful tips***: in case any errors occur when running the "careflow.mod()" function, please check that the DiagrammeR version installed is at least 1.0.9
