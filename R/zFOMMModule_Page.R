@@ -64,7 +64,7 @@ server.FOMM<-function(input,output,session){
 
 
 
-      #FOMM GRAPH PANEL
+      ############################################################# FOMM GRAPH TAB #########################################################################
       removeTab(inputId = "tabs", target = "FOMM")
       insertTab(inputId = "tabs",
                 tabPanel("FOMM",
@@ -93,13 +93,6 @@ server.FOMM<-function(input,output,session){
                                                  right = TRUE
                                                )
                                         )
-                                      ),
-                                      br(),
-                                      br(),
-                                      fluidRow(
-                                        column(12,
-                                               actionButton("KM","Survival Analysis",width = '100%')
-                                               )
                                       )
                                     ),
 
@@ -114,6 +107,173 @@ server.FOMM<-function(input,output,session){
                 target = "Loading EventLog",
                 position = "after"
       )
+
+      ############################################################################# KAPLAN MEIER TAB ####################################################################
+
+      removeTab(inputId = "tabs", target = "Survival Analysis")
+      insertTab(inputId = "tabs",
+                tabPanel("Survival Analysis",
+                         titlePanel("Process Discovery: FOMM, Survival Analysis"),
+                         br(),
+
+                         fluidRow(
+                           column(12,
+                                  sidebarLayout(
+                                    sidebarPanel(
+                                      width = 3,
+                                      # p(h3("Parameter Setting")),
+                                      # tags$hr(),
+                                      fluidRow(
+                                        column(9,
+                                               p(h3("Parameter Setting")),
+                                        ),
+                                        column(3,
+                                               dropdownButton(
+                                                 tags$h4(strong("Survival Analysis with Kaplan Meier")),
+
+                                                 tags$h5("The cohort consists of patients who have experienced a certain state, which the user must make explicit in the", strong("\"from state\" field"), "and who have experienced a certain state of interest,
+                                                 which must be made explicit in the", strong("\"to state\" field.")),
+
+                                                 tags$h5("Through the", strong("\"censored at\" field") ," it will be possible to indicate which state the patients will have to transit
+                                                 to in order to be considered censored."),
+
+
+                                                 tags$h5("It is possible to apply filters on the population involved in the analysis.
+                                                         Through the", strong("\"passing through\""), "and" , strong("\"passing not through\""),"fields, it is possible to indicate, respectively, which states must and must not have experienced by patients in order to be used for the analysis"),
+
+
+                                                 circle = FALSE,
+                                                 status = "info",
+                                                 size = "xs",
+                                                 icon = icon("fas fa-info"),
+                                                 width = "300px",
+                                                 right = TRUE,
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+
+                                        )
+                                      ),
+                                      fluidRow(
+                                        column(12,
+                                               br()
+                                        )
+                                      ),
+
+
+
+                                      #KAPLAN MAIER PARAM
+                                      fluidRow(
+                                        column(6,
+                                               selectInput("event.from","From State: ", choices = unique(all.data[[1]]$EVENT))
+                                        ),
+                                        column(6,
+                                               selectInput("event.to","To State: ",
+                                                           choices = unique(all.data[[1]]$EVENT), selected = unique(all.data[[1]]$EVENT)[2] )
+                                        )
+                                      ),
+
+                                      fluidRow(
+                                        column(6,
+                                               selectInput("PDVat","Censored at:",
+                                                           choices = NULL)
+                                        ),
+                                        column(6,
+                                               selectInput("UM","Temporal Scale:",
+                                                           choices = c("mins", "hours","days","weeks","months")),
+                                               # materialSwitch(
+                                               #   inputId = "filters",
+                                               #   label = "add filters",
+                                               #   status = "primary",
+                                               #   right = TRUE)
+
+                                        )
+                                      ),
+
+                                      fluidRow(
+                                        column(12,
+                                               p(h3("Add Filters")),
+                                               )
+                                      ),
+
+                                      fluidRow(
+                                        column(6,
+                                               pickerInput(
+                                                 inputId ="pass.thr",
+                                                 label = "Passing Through",
+                                                 choices = unique(all.data[[1]]$EVENT),
+                                                 multiple = TRUE,
+                                                 options = list(
+                                                   title = "select event")
+                                               )
+
+                                        ),
+
+                                        column(6,
+                                               pickerInput(
+                                                 inputId ="pass.not.thr",
+                                                 label = "Passing not Through",
+                                                 choices = unique(all.data[[1]]$EVENT),
+                                                 multiple = TRUE,
+                                                 options = list(
+                                                   title = "select event")
+                                               )
+                                        )
+                                      )
+
+                                      # conditionalPanel(condition = "input.filters",
+                                      #                  fluidRow(
+                                      #                    column(6,
+                                      #                           selectInput("pass.thr","Passing Through",
+                                      #                                       choices = NULL)
+                                      #                           ),
+                                      #
+                                      #                    column(6,
+                                      #                           selectInput("pass.not.thr","Passing not Through",
+                                      #                                       choices = NULL)
+                                      #                           )
+                                      #                    )
+                                      #                  )
+
+
+
+                                    ),
+
+                                    mainPanel(
+                                      fluidRow(
+                                        column(11,
+                                               ),
+                                        column(1,
+                                               dropdownButton(
+                                                 grVizOutput("prev.fomm"),
+
+                                                 circle = FALSE,
+                                                 status = "primary",
+                                                 size = "xs",
+                                                 icon = icon("fas fa-info"),
+                                                 width = "800px",
+                                                 right = TRUE,
+                                                 tags$div(style = "height: 80px;"),
+                                                 tooltip = tooltipOptions(title = "Click to see fomm graph")
+                                               )
+
+                                        )
+                                      ),
+                                      fluidRow(
+                                        plotOutput("surv.curve")
+                                      )
+                                    )
+                                  )
+                           )
+                         )
+
+                ),
+                target = "FOMM",
+                position = "after"
+      )
+     ###########################################################################################################################################################################
+
+
+
     }
 
 
@@ -143,58 +303,76 @@ server.FOMM<-function(input,output,session){
 
     #################################################### SURVIVAL ANALYSIS TAB ##############################################################################
 
-    observeEvent(input$KM,{
-      removeTab(inputId = "tabs", target = "Survival Analysis")
-      insertTab(inputId = "tabs",
-                tabPanel("Survival Analysis",
-                         titlePanel("Process Discovery: FOMM, Survival Analysis"),
-                         br(),
-                         fluidRow(
-                           column(12,
-                                  sidebarLayout(
-                                    sidebarPanel(
-                                      width = 3,
-                                      p(h3("Parameter Setting")),
-                                      tags$hr(),
-                                      fluidRow(
-                                        column(12,
-                                               br()
-                                               )
-                                      ),
 
-                                      #KAPLAN MAIER PARAM
-                                      fluidRow(
-                                        column(6,
-                                               selectInput("event.from","From State: ", choices = unique(all.data[[1]]$EVENT))
-                                               ),
-                                        column(6,
-                                               selectInput("event.to","To State: ", choices = unique(all.data[[1]]$EVENT), selected = unique(all.data[[1]]$EVENT)[2] )
-                                               )
-                                        )
-                                      ),
 
-                                    mainPanel(
-                                      plotOutput("surv.curve")
-                                    )
-                                  )
-                           )
-                         )
-
-                ),
-                target = "FOMM",
-                position = "after"
-      )
-
+    output$prev.fomm<-renderGrViz({
+      grViz(fomm.graph())
     })
+
+
+    observeEvent(input$event.from,{
+      updateSelectInput(session = session,
+                        inputId = "PDVat",
+                        label = "Censored at:",
+                        choices = unique(all.data[[1]]$EVENT)[!unique(all.data[[1]]$EVENT) %in% c(input$event.from)],
+                        selected = NULL
+
+                        )
+
+      updateSelectInput(session = session,
+                        inputId = "event.to",
+                        label = "To State: ",
+                        choices = unique(all.data[[1]]$EVENT)[!unique(all.data[[1]]$EVENT) %in% c(input$event.from)],
+                        selected = NULL
+
+      )
+    })
+
 
 
     surv<-reactive({
       FOMM<-data_reactive$FOMM
-      KM <- FOMM$KaplanMeier(fromState = input$event.from,toState = input$event.to, UM = "days")
-      return(plot( KM$KM, main="Covid_BEGIN -> Covid_END", xlab="days",ylab="p"))
+      pass.th<-input$pass.thr
+      pass.not.th<-input$pass.not.thr
+      if(pass.th=="" || is.null(pass.th)){
+
+        pass.th<-c()
+      }
+      if(pass.not.th=="" || is.null(pass.not.th)){
+        pass.not.th<-c()
+      }
+
+
+
+
+      KM <- KaplanMeier(fromState = input$event.from,
+                        toState = input$event.to,
+                        ObjDL,
+                        passingThrough=pass.th,
+                        passingNotThrough=pass.not.th,
+                        PDVAt=input$PDVat,
+                        UM=input$UM)
+      if(is.null(KM)){
+        to_ret<-NULL
+      }else{
+        to_ret<-plot(KM$KM, main=paste0(input$event.from, "->", input$event.to),
+                     xlab=input$UM,
+                     ylab="p",
+                     mark.time=TRUE)
+      }
+
+      return(to_ret)
+
+
     })
 
-    output$surv.curve<-renderPlot(surv())
+    output$surv.curve<-renderPlot({
+      if(is.null(surv())){
+        validate("Error: please check ")
+      }else{
+        surv()
+      }
+    })
 
     ##################################################################################################################################################################
 

@@ -7,6 +7,7 @@
 #'@import pMineR
 #'@import DiagrammeR
 #'@import shinyjqui
+#'@import survival
 
 
 
@@ -25,7 +26,9 @@ server.careFlow<-function(input,output,session){
     max_depth=FALSE,
     support=array(),
     leaf=FALSE,
-    median_time=FALSE
+    median_time=FALSE,
+    node.list = list(),
+    strat.plot = c()
   )
 
 
@@ -65,6 +68,8 @@ server.careFlow<-function(input,output,session){
                             format.column.date = "%Y-%m-%d")
       ObjCFM<<-careFlowMiner(verbose.mode = FALSE)
       ObjCFM$loadDataset(inputData = ObjDL$getData())
+      data_reactive$node.list<-ObjCFM$getDataStructure()$lst.nodi
+
 
 
       #CARE FLOW PANEL
@@ -130,6 +135,7 @@ server.careFlow<-function(input,output,session){
                                         )
                                       ),
 
+
                                       fluidRow(
                                         column(12,
                                                actionButton("EN_EL","Enriched EL Analysis",width = '100%')
@@ -137,19 +143,22 @@ server.careFlow<-function(input,output,session){
                                       )
                                     ),
 
+
                                     mainPanel(
-                                      jqui_resizable(grVizOutput("CareFlowGraph"))
+                                        jqui_resizable(grVizOutput("CareFlowGraph"))
+
                                       )
                                   )
                            )
-                         )
+                         ),
+
 
                 ),
                 target = "Loading EventLog",
                 position = "after"
       )
 
-      #PREDICTIVE PANEL
+      ################################################################### PREDICTIVE PANEL ####################################################################
       removeTab(inputId = "tabs", target = "Probabilistic CareFlowMiner")
       insertTab(inputId = "tabs",
                 tabPanel("Probabilistic CareFlowMiner",
@@ -227,7 +236,151 @@ server.careFlow<-function(input,output,session){
                 target = "CareFlowMiner",
                 position = "after"
       )
+
+
+      ################################################################### KAPLAN MEIER PANEL ###############################################################
+      removeTab(inputId = "tabs", target = "Survival Analysis")
+      insertTab(inputId = "tabs",
+                tabPanel("Survival Analysis",
+                         titlePanel("Process Discovery: Survival Analysis"),
+                         br(),
+                         fluidRow(
+                           column(12,
+                                  sidebarLayout(
+                                    sidebarPanel(
+                                      width = 3,
+                                      fluidRow(
+                                        column(9,
+                                               p(h3("Parameter Setting")),
+                                        ),
+                                        column(3,
+                                               dropdownButton(
+                                                 tags$h4(strong("Survival Analysis with Kaplan Meier")),
+
+                                                 tags$h5("The cohort consists of patients who have experienced a certain state, which the user must make explicit in the", strong("\"from state\" field"), "and who have experienced a certain state of interest,
+                                                 which must be made explicit in the", strong("\"to state\" field.")),
+
+                                                 tags$h5("Through the", strong("\"censored at\" field") ," it will be possible to indicate which state the patients will have to transit
+                                                 to in order to be considered censored."),
+
+
+                                                 tags$h5("It is possible to apply filters on the population involved in the analysis.
+                                                         Through the", strong("\"passing through\""), "and" , strong("\"passing not through\""),"fields, it is possible to indicate, respectively, which states must and must not have experienced by patients in order to be used for the analysis"),
+
+
+                                                 circle = FALSE,
+                                                 status = "info",
+                                                 size = "xs",
+                                                 icon = icon("fas fa-info"),
+                                                 width = "300px",
+                                                 right = TRUE,
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+
+                                        )
+                                      ),
+                                      fluidRow(
+                                        column(12,
+                                               br()
+                                        )
+                                      ),
+
+                                      #KAPLAN MAIER PARAM: FIRST ROW--> ID FROM & ID TO
+                                      fluidRow(
+                                        column(6,
+                                               numericInput("id.start", label = "select node id start:", value = 1)
+                                               # selectInput(,"From State: ", choices = unique(all.data[[1]]$EVENT))
+                                        ),
+                                        column(6,
+                                               numericInput("id.end", label = "select node id end:", value = NULL)
+                                        )
+                                      ),
+
+                                      fluidRow(
+                                        column(6,
+                                               pickerInput(
+                                                 inputId ="id.cens",
+                                                 label = "id node censored:",
+                                                 choices = names(data_reactive$node.list),
+                                                 multiple = TRUE,
+                                                 options = list(
+                                                   title = "select node-id")
+                                               )
+                                        ),
+                                        column(6,
+                                               materialSwitch(
+                                                 inputId = "cens.leaf",
+                                                 label = "Use leaf for cens",
+                                                 status = "default",
+                                                 right = TRUE)
+                                        )
+                                      ),
+
+
+                                    ),
+
+                                    mainPanel(
+                                      fluidRow(
+                                        column(11,
+                                        ),
+                                        column(1,
+                                               dropdownButton(
+                                                 grVizOutput("prev.cfm"),
+                                                 # tags$h4(strong("Survival Analysis with Kaplan Meier")),
+                                                 #
+                                                 # tags$h5("The cohort consists of patients who have experienced a certain state, which the user must make explicit in the", strong("\"from state\" field"), "and who have experienced a certain state of interest,
+                                                 # which must be made explicit in the", strong("\"to state\" field.")),
+                                                 #
+                                                 # tags$h5("Through the", strong("\"censored at\" field") ," it will be possible to indicate which state the patients will have to transit
+                                                 # to in order to be considered censored."),
+                                                 #
+                                                 #
+                                                 # tags$h5("It is possible to apply filters on the population involved in the analysis.
+                                                 #         Through the", strong("\"passing through\""), "and" , strong("\"passing not through\""),"fields, it is possible to indicate, respectively, which states must and must not have experienced by patients in order to be used for the analysis"),
+
+
+                                                 circle = FALSE,
+                                                 status = "info",
+                                                 size = "xs",
+                                                 icon = icon("fas fa-info"),
+                                                 width = "1000px",
+                                                 right = TRUE,
+                                                 tags$div(style = "height: 100px;"),
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+
+                                        )
+                                      ),
+                                      fluidRow(
+                                        plotOutput("surv.curve")
+                                      )
+                                    )
+                                  )
+                           )
+                         )
+
+                ),
+                target = "Probabilistic CareFlowMiner",
+                position = "after"
+      )
     }
+
+    surv.graph<-reactive({
+      plotKM<-KM_CFM(ObjCFM,
+                   input$id.start,
+                   input$id.end,
+                   input$cens.leaf,
+                   input$id.cens,
+                   ObjDL,
+                   UM="days")
+      if(is.null(plotKM)){
+        validate("please check the inputs")
+      }else{
+        return(plotKM)
+      }
+    })
+
+    output$surv.curve<-renderPlot(surv.graph())
 
 
    observeEvent(input$depth, {
@@ -317,6 +470,10 @@ server.careFlow<-function(input,output,session){
      grViz(CFgraph())
    })
 
+   output$prev.cfm<-renderGrViz({
+     grViz(CFgraph())
+   })
+
 
    #PLOT CAREFLOW PREDITTIVO
    CFgraph.pred<-reactive({
@@ -350,13 +507,6 @@ server.careFlow<-function(input,output,session){
                                  nodeShape = "square")$script
 
 
-
-     # graph<-cf_pred(ObjCFM,
-     #         max_depth= dp,
-     #         input$support.pred,
-     #         outcome= input$pred.outcome,
-     #         col.pred= input$pred.outcome.col)
-
      return(graph)
    })
 
@@ -366,7 +516,7 @@ server.careFlow<-function(input,output,session){
 
   })
 
-  #STRATIFIED CF PANEL
+  ########################################################## STRATIFIED CF PANEL #################################################
   observeEvent(input$EN_EL,{
     removeTab(inputId = "tabs", target = "Stratified CareFlowMiner")
     insertTab(inputId = "tabs",
@@ -434,13 +584,22 @@ server.careFlow<-function(input,output,session){
                       column(9,
                              selectInput("final.state", label = "Future State:", choices = unique(data_reactive$EventLog["EVENT"]))
                              )
+                    ),
+
+                    fluidRow(
+                      column(8,
+                      ),
+                      column(4,
+                             actionButton("refresh","Refresh graph")
+                             )
                     )
 
 
 
                   ),
                   mainPanel(
-                    jqui_resizable(grVizOutput("CF.strat"))
+                    jqui_resizable(grVizOutput("CF.strat")),
+                    # actionButton("refresh","Refresh graph",width = '30%')
                   )
                 )
               ),
@@ -488,10 +647,16 @@ server.careFlow<-function(input,output,session){
   observeEvent(input$strat.var.type,{
     if(input$strat.var.type=="Categorical"){
       shiny::updateSelectInput(
-        inputId = "strat.value",
+        inputId = "strat.value1",
         label = "Select possible value fot the selected var:",
         choices = unique(data_reactive$EventLog[input$strat.var])
+      )
 
+      shiny::updateSelectInput(
+        inputId = "strat.value2",
+        label = "Select possible value fot the selected var:",
+        choices = unique(data_reactive$EventLog[input$strat.var])[!unique(data_reactive$EventLog[input$strat.var]) %in% input$strat.value1],
+        selected = NULL
       )
     }
     else if (input$strat.var.type=="Numeric"){
@@ -510,7 +675,7 @@ server.careFlow<-function(input,output,session){
     }
   })
 
-  CF.strat.plot<-reactive({
+  observeEvent(input$refresh,{
     if(data_reactive$max_depth){
       dp<-Inf
     }else{
@@ -520,19 +685,9 @@ server.careFlow<-function(input,output,session){
 
     if(input$strat.var.type=="Categorical"){
       if(length(input$strat.value2)>1){
-        ObjDL.out<-ObjDL$getData()
-        tmp.csv <- ObjDL.out$original.CSV
-        #MINORE -> 0
-        tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var] %in% input$strat.value2),input$strat.var]<-0
-        tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]%in% input$strat.value1),input$strat.var]<-1
-        #MAGGIORE = ->1
-        tmp.DL <- dataLoader(verbose.mode = FALSE)
-        tmp.DL$load.data.frame(mydata = tmp.csv,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",format.column.date = "%d/%m/%Y")
-
-        tmp.ObjCFM <- careFlowMiner()
-        tmp.ObjCFM$loadDataset(inputData = tmp.DL$getData() )
-        script<-tmp.ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
-                                             stratificationValues = c(0,1),
+        script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+                                             arr.stratificationValues.A = input$strat.value1,
+                                             arr.stratificationValues.B = input$strat.value2,
                                              depth= dp,
                                              abs.threshold = data_reactive$support,
                                              checkDurationFromRoot = input$strat.time,
@@ -556,19 +711,8 @@ server.careFlow<-function(input,output,session){
     }else{
       mediana <- median(as.numeric(data_reactive$EventLog[,input$strat.var]),na.rm = T)
 
-      ObjDL.out<-ObjDL$getData()
-      tmp.csv <- ObjDL.out$original.CSV
-      #MINORE -> 0
-      tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]<mediana),input$strat.var]<-0
-      tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]>=mediana),input$strat.var]<-1
-      #MAGGIORE = ->1
-      tmp.DL <- dataLoader(verbose.mode = FALSE)
-      tmp.DL$load.data.frame(mydata = tmp.csv,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",format.column.date = "%d/%m/%Y")
-
-      tmp.ObjCFM <- careFlowMiner()
-      tmp.ObjCFM$loadDataset(inputData = tmp.DL$getData() )
-      script<-tmp.ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
-                                           stratificationValues = c(0,1),
+      script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+                                           stratificationThreshold = mediana,
                                            depth= dp,
                                            abs.threshold = data_reactive$support,
                                            checkDurationFromRoot = input$strat.time,
@@ -578,22 +722,93 @@ server.careFlow<-function(input,output,session){
                                            nodeShape = "square")$script
 
     }
-      # script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
-      #                              stratificationValues = input$strat.value,
-      #                              depth= data_reactive$depth,
-      #                              abs.threshold = data_reactive$support,
-      #                              checkDurationFromRoot = input$strat.time,
-      #                              hitsMeansReachAGivenFinalState = input$perc.end,
-      #                              finalStateForHits = input$final.state ,
-      #                              kindOfGraph = "dot",
-      #                              nodeShape = "square")$script
 
-      return(script)
-
+    data_reactive$strat.plot<- script
   })
 
+  # CF.strat.plot<-reactive({
+  #   if(data_reactive$max_depth){
+  #     dp<-Inf
+  #   }else{
+  #     dp<-data_reactive$depth
+  #   }
+  #
+  #
+  #   if(input$strat.var.type=="Categorical"){
+  #     if(length(input$strat.value2)>1){
+  #       #RICARICO EL SOLO IN CASO DI DUMMY
+  #       # ObjDL.out<-ObjDL$getData()
+  #       # tmp.csv <- ObjDL.out$original.CSV
+  #       # #MINORE -> 0
+  #       # tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var] %in% input$strat.value2),input$strat.var]<-0
+  #       # tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]%in% input$strat.value1),input$strat.var]<-1
+  #       # #MAGGIORE = ->1
+  #       # tmp.DL <- dataLoader(verbose.mode = FALSE)
+  #       # tmp.DL$load.data.frame(mydata = tmp.csv,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",format.column.date = "%d/%m/%Y")
+  #
+  #       # tmp.ObjCFM <- careFlowMiner()
+  #       # tmp.ObjCFM$loadDataset(inputData = ObjDL$getData() )
+  #       script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+  #                                                arr.stratificationValues.A = input$strat.value1,
+  #                                                arr.stratificationValues.B = input$strat.value2,
+  #                                            depth= dp,
+  #                                            abs.threshold = data_reactive$support,
+  #                                            checkDurationFromRoot = input$strat.time,
+  #                                            hitsMeansReachAGivenFinalState = input$perc.end,
+  #                                            finalStateForHits = input$final.state ,
+  #                                            kindOfGraph = "dot",
+  #                                            nodeShape = "square")$script
+  #
+  #     }else{
+  #       script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+  #                                            stratificationValues = c(input$strat.value1,input$strat.value2),
+  #                                            depth= dp,
+  #                                            abs.threshold = data_reactive$support,
+  #                                            checkDurationFromRoot = input$strat.time,
+  #                                            hitsMeansReachAGivenFinalState = input$perc.end,
+  #                                            finalStateForHits = input$final.state ,
+  #                                            kindOfGraph = "dot",
+  #                                            nodeShape = "square")$script
+  #     }
+  #
+  #   }else{
+  #     mediana <- median(as.numeric(data_reactive$EventLog[,input$strat.var]),na.rm = T)
+  #
+  #     # ObjDL.out<-ObjDL$getData()
+  #     # tmp.csv <- ObjDL.out$original.CSV
+  #     # #MINORE -> 0
+  #     # tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]<mediana),input$strat.var]<-0
+  #     # tmp.csv[which(ObjDL.out$original.CSV[,input$strat.var]>=mediana),input$strat.var]<-1
+  #     # #MAGGIORE = ->1
+  #     # tmp.DL <- dataLoader(verbose.mode = FALSE)
+  #     # tmp.DL$load.data.frame(mydata = tmp.csv,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",format.column.date = "%d/%m/%Y")
+  #     #
+  #     # tmp.ObjCFM <- careFlowMiner()
+  #     # tmp.ObjCFM$loadDataset(inputData = tmp.DL$getData() )
+  #     script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
+  #                                              stratificationThreshold = mediana,
+  #                                          depth= dp,
+  #                                          abs.threshold = data_reactive$support,
+  #                                          checkDurationFromRoot = input$strat.time,
+  #                                          hitsMeansReachAGivenFinalState = input$perc.end,
+  #                                          finalStateForHits = input$final.state ,
+  #                                          kindOfGraph = "dot",
+  #                                          nodeShape = "square")$script
+  #
+  #   }
+  #
+  #     return(script)
+  #
+  # })
+
   output$CF.strat<-renderGrViz({
-    grViz(CF.strat.plot(),env=parent.frame())
+    if(is.null(data_reactive$strat.plot)){
+      validate("please click the refresh button")
+    }else{
+      grViz(data_reactive$strat.plot)
+    }
+
+    # grViz(CF.strat.plot(),env=parent.frame())
   })
 
 
