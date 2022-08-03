@@ -133,6 +133,8 @@ import_data_server_visual<- function(input,
                               name,
                               flag= FALSE){
 
+  options(shiny.maxRequestSize=50*1024^2)
+
   data_re<-reactiveValues(
     id = c(),
     date = c(),
