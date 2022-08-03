@@ -84,11 +84,9 @@ server.descr<-function(input,output,session){
   observeEvent(input$loadEL,{
     # null.col<-array(dim = nrow(all.data[["EventLog"]]))
     df<-cbind(all.data[["EventLog"]])
-
-
-
-
-    data_reactive$EventLog <- select(df,"ID","DATE_INI","DATE_END","EVENT")
+    data_reactive$EventLog<-df
+    # data_reactive$EventLog <- select(df,"ID","DATE_INI","DATE_END","EVENT") df[, c("ID","DATE_INI","DATE_END","EVENT")]
+    #
 
 
     if(is_empty(data_reactive$EventLog)){
@@ -118,6 +116,9 @@ server.descr<-function(input,output,session){
       data_reactive$EventLog<-data.frame()
 
     }else{
+      data_reactive$EventLog <- df[, c("ID","DATE_INI","DATE_END","EVENT")]
+      if(is.factor(data_reactive$EventLog$EVENT)) { data_reactive$EventLog$EVENT <- as.character(data_reactive$EventLog$EVENT)  }
+
       objDL.new <<- dataLoader(verbose.mode = FALSE)
       objDL.new$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
                                 format.column.date = "%Y-%m-%d")
