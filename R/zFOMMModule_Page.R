@@ -58,6 +58,8 @@ server.FOMM<-function(input,output,session){
       data_reactive$EventLog<-data.frame()
     }else{
       # Creating Dl obj e CFM obj
+
+      if(is.factor(data_reactive$EventLog$EVENT)) { data_reactive$EventLog$EVENT <- as.character(data_reactive$EventLog$EVENT)  }
       ObjDL<<-dataLoader(verbose.mode = FALSE)
       ObjDL$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
                             format.column.date = "%Y-%m-%d")
@@ -164,18 +166,26 @@ server.FOMM<-function(input,output,session){
                                       #KAPLAN MAIER PARAM
                                       fluidRow(
                                         column(6,
-                                               selectInput("event.from","From State: ", choices = unique(all.data[[1]]$EVENT))
+                                               selectInput("event.from","From State: ", choices = unique(data_reactive$EventLog$EVENT))
                                         ),
                                         column(6,
                                                selectInput("event.to","To State: ",
-                                                           choices = unique(all.data[[1]]$EVENT), selected = unique(all.data[[1]]$EVENT)[2] )
+                                                           choices = unique(data_reactive$EventLog$EVENT), selected = unique(data_reactive$EventLog$EVENT)[2] )
                                         )
                                       ),
 
                                       fluidRow(
                                         column(6,
-                                               selectInput("PDVat","Censored at:",
-                                                           choices = NULL)
+                                               pickerInput(
+                                                 inputId ="PDVat",
+                                                 label = "Censored at:",
+                                                 choices = unique(data_reactive$EventLog$EVENT),
+                                                 multiple = TRUE,
+                                                 options = list(
+                                                   title = "select event")
+                                               )
+                                               # selectInput("PDVat","Censored at:",
+                                               #             choices = NULL)
                                         ),
                                         column(6,
                                                selectInput("UM","Temporal Scale:",
@@ -200,7 +210,7 @@ server.FOMM<-function(input,output,session){
                                                pickerInput(
                                                  inputId ="pass.thr",
                                                  label = "Passing Through",
-                                                 choices = unique(all.data[[1]]$EVENT),
+                                                 choices = unique(data_reactive$EventLog$EVENT),
                                                  multiple = TRUE,
                                                  options = list(
                                                    title = "select event")
@@ -212,7 +222,7 @@ server.FOMM<-function(input,output,session){
                                                pickerInput(
                                                  inputId ="pass.not.thr",
                                                  label = "Passing not Through",
-                                                 choices = unique(all.data[[1]]$EVENT),
+                                                 choices = unique(data_reactive$EventLog$EVENT),
                                                  multiple = TRUE,
                                                  options = list(
                                                    title = "select event")
@@ -310,23 +320,23 @@ server.FOMM<-function(input,output,session){
     })
 
 
-    observeEvent(input$event.from,{
-      updateSelectInput(session = session,
-                        inputId = "PDVat",
-                        label = "Censored at:",
-                        choices = unique(all.data[[1]]$EVENT)[!unique(all.data[[1]]$EVENT) %in% c(input$event.from)],
-                        selected = NULL
-
-                        )
-
-      updateSelectInput(session = session,
-                        inputId = "event.to",
-                        label = "To State: ",
-                        choices = unique(all.data[[1]]$EVENT)[!unique(all.data[[1]]$EVENT) %in% c(input$event.from)],
-                        selected = NULL
-
-      )
-    })
+    # observeEvent(input$event.from,{
+    #   updateSelectInput(session = session,
+    #                     inputId = "PDVat",
+    #                     label = "Censored at:",
+    #                     choices = unique(all.data[[1]]$EVENT)[!unique(all.data[[1]]$EVENT) %in% c(input$event.from)],
+    #                     selected = NULL
+    #
+    #                     )
+    #
+    #   updateSelectInput(session = session,
+    #                     inputId = "event.to",
+    #                     label = "To State: ",
+    #                     choices = unique(all.data[[1]]$EVENT)[!unique(all.data[[1]]$EVENT) %in% c(input$event.from)],
+    #                     selected = NULL
+    #
+    #   )
+    # })
 
 
 
@@ -334,12 +344,17 @@ server.FOMM<-function(input,output,session){
       FOMM<-data_reactive$FOMM
       pass.th<-input$pass.thr
       pass.not.th<-input$pass.not.thr
+      pdv<-input$PDVat
       if(pass.th=="" || is.null(pass.th)){
 
         pass.th<-c()
       }
       if(pass.not.th=="" || is.null(pass.not.th)){
         pass.not.th<-c()
+      }
+
+      if(pdv=="" || is.null(pdv)){
+        pdv<-c()
       }
 
 
@@ -350,9 +365,11 @@ server.FOMM<-function(input,output,session){
                         ObjDL,
                         passingThrough=pass.th,
                         passingNotThrough=pass.not.th,
-                        PDVAt=input$PDVat,
+                        PDVAt=pdv,
                         UM=input$UM)
       if(is.null(KM)){
+        to_ret<-NULL
+      }else if(input$event.from == input$event.to){
         to_ret<-NULL
       }else{
         to_ret<-plot(KM$KM, main=paste0(input$event.from, "->", input$event.to),

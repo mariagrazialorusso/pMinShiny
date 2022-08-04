@@ -62,6 +62,12 @@ server.careFlow<-function(input,output,session){
       )
       data_reactive$EventLog<-data.frame()
     }else{
+
+      #check factors
+
+      if(is.factor(data_reactive$EventLog$EVENT)) { data_reactive$EventLog$EVENT <- as.character(data_reactive$EventLog$EVENT)  }
+
+
       # Creating Dl obj e CFM obj
       ObjDL<<-dataLoader(verbose.mode = FALSE)
       ObjDL$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
@@ -257,15 +263,15 @@ server.careFlow<-function(input,output,session){
                                                dropdownButton(
                                                  tags$h4(strong("Survival Analysis with Kaplan Meier")),
 
-                                                 tags$h5("The cohort consists of patients who have experienced a certain state, which the user must make explicit in the", strong("\"from state\" field"), "and who have experienced a certain state of interest,
-                                                 which must be made explicit in the", strong("\"to state\" field.")),
+                                                 tags$h5("The cohort consists of patients transiting through the node chosen as the start node,
+                                                         which must be selected in the ", strong("\"node id start\" field."),"and who have experienced a certain state of interest,
+                                                         which must be made explicit in the", strong("\"node id end\" field.")),
 
-                                                 tags$h5("Through the", strong("\"censored at\" field") ," it will be possible to indicate which state the patients will have to transit
+                                                 tags$h5("Through the", strong("\"id node censored\" field") ," it will be possible to indicate in which nodes the patients will have to transit
                                                  to in order to be considered censored."),
 
 
-                                                 tags$h5("It is possible to apply filters on the population involved in the analysis.
-                                                         Through the", strong("\"passing through\""), "and" , strong("\"passing not through\""),"fields, it is possible to indicate, respectively, which states must and must not have experienced by patients in order to be used for the analysis"),
+                                                 tags$h5("using the input ",strong("\"use leaf as cens\"")," it will be possible to choose whether to follow the clinical follow-up of patients up to the last event they experienced"),
 
 
                                                  circle = FALSE,
@@ -288,25 +294,23 @@ server.careFlow<-function(input,output,session){
                                       #KAPLAN MAIER PARAM: FIRST ROW--> ID FROM & ID TO
                                       fluidRow(
                                         column(6,
-                                               numericInput("id.start", label = "select node id start:", value = 1)
-                                               # selectInput(,"From State: ", choices = unique(all.data[[1]]$EVENT))
-                                        ),
+                                               numericInput("id.start", label = "id node start:", value = 1)
+                                               ),
                                         column(6,
-                                               numericInput("id.end", label = "select node id end:", value = NULL)
-                                        )
-                                      ),
+                                               numericInput("id.end", label = "id node end:", value = NULL)
+                                               )
+                                        ),
 
                                       fluidRow(
                                         column(6,
-                                               pickerInput(
-                                                 inputId ="id.cens",
-                                                 label = "id node censored:",
-                                                 choices = names(data_reactive$node.list),
-                                                 multiple = TRUE,
-                                                 options = list(
-                                                   title = "select node-id")
-                                               )
+                                               selectInput(inputId = "id.cens",
+                                                           label = "id node censored:",
+                                                           choices = names(data_reactive$node.list),
+                                                           selected = NULL,
+                                                           multiple = TRUE
+                                                           )
                                         ),
+
                                         column(6,
                                                materialSwitch(
                                                  inputId = "cens.leaf",
@@ -326,21 +330,9 @@ server.careFlow<-function(input,output,session){
                                         column(1,
                                                dropdownButton(
                                                  grVizOutput("prev.cfm"),
-                                                 # tags$h4(strong("Survival Analysis with Kaplan Meier")),
-                                                 #
-                                                 # tags$h5("The cohort consists of patients who have experienced a certain state, which the user must make explicit in the", strong("\"from state\" field"), "and who have experienced a certain state of interest,
-                                                 # which must be made explicit in the", strong("\"to state\" field.")),
-                                                 #
-                                                 # tags$h5("Through the", strong("\"censored at\" field") ," it will be possible to indicate which state the patients will have to transit
-                                                 # to in order to be considered censored."),
-                                                 #
-                                                 #
-                                                 # tags$h5("It is possible to apply filters on the population involved in the analysis.
-                                                 #         Through the", strong("\"passing through\""), "and" , strong("\"passing not through\""),"fields, it is possible to indicate, respectively, which states must and must not have experienced by patients in order to be used for the analysis"),
-
 
                                                  circle = FALSE,
-                                                 status = "info",
+                                                 status = "primary",
                                                  size = "xs",
                                                  icon = icon("fas fa-info"),
                                                  width = "1000px",
@@ -525,66 +517,143 @@ server.careFlow<-function(input,output,session){
                 sidebarLayout(
                   sidebarPanel(
                     width = 3,
-                    p(h5("A stratification variable can be entered in this section.
-                    In this way it is possible to analyze whether the two groups into which the total population is divided,
-                    present significant differences in terms of the pathway calculated by the Care Flow Miner")),
-                    br(),
-                    p(h5("Please note that in this section are used the depth and support parameters entered in the previous panel")),
+
+                    fluidRow(
+                      column(9,
+                             p(h3("Parameter Setting"))
+                      ),
+                      column(3,
+                             br(),
+                             dropdownButton(
+                               p(h4("Stratification of the CareFlow Miner")),
+                               br(),
+
+                               p(h5("A stratification variable can be entered in this section.
+                               In this way it is possible to analyze whether the two groups into which the total population is divided,
+                                    present significant differences in terms of the pathway calculated by the Care Flow Miner")),
+                               br(),
+
+                               p(h5("Using the inputs in the Parameter Setting bar, it is possibile to select the stratification var,
+                                    set whether the variable you choose is categorical or numerical, and explicit the specific values for stratification")),
+                               tags$hr(),
+
+                               p(h5("The inferential analysis presented is accomplished by considering the",strong("number of patients passing through each node."),
+                                    "it is possible to compare the different sub-courses with respect to", strong("time to arrive at the node"),
+                                    "and for the", strong("probability of experiencing a given event of interest"))),
+
+
+                               circle = FALSE,
+                               status = "info",
+                               size = "xs",
+                               icon = icon("fas fa-info"),
+                               width = "300px",
+                               right = TRUE,
+                               tooltip = tooltipOptions(title = "Click to more info")
+                             )
+
+                      )
+                    ),
+                    # fluidRow(
+                    #   column(12,
+                    #          br()
+                    #   )
+                    # ),
+
+                    #CFM PARAMETERS
+                    fluidRow(
+                      column(7,
+                             numericInput("depth.strat", label = "Select depth:", value = 5),
+
+                      ),
+                      column(5,
+                             br(),
+                             br(),
+                             materialSwitch(
+                               inputId = "max_depth.strat",
+                               label = "max depth",
+                               status = "primary",
+                               right = TRUE
+                             )
+                      )
+                    ),
+                    # br(),
+                    # tags$hr(),
+                    #parametro supporto
+                    fluidRow(
+                      column(12,
+                             numericInput("support.strat", label ="Select support value:", value = 10),
+
+                      )
+                    ),
+
                     tags$hr(),
 
                     fluidRow(
-                      selectInput("strat.var", label = "Select variable for the stratification:",
-                                  choices = colnames(data_reactive$EventLog)[!(colnames(data_reactive$EventLog) %in% c("ID","DATE_INI","EVENT"))],
-                                  selected = NULL)
+                      #stratification var
+                      column(6,
+                             selectInput("strat.var", label = "Select variable for the stratification:",
+                                         choices = colnames(data_reactive$EventLog)[!(colnames(data_reactive$EventLog) %in% c("ID","DATE_INI","EVENT"))],
+                                         selected = NULL)
+                             ),
+                      #stratification var TYPE
+                      column(6,
+                             selectInput("strat.var.type", label ="Select the stratification variable type:",
+                                         choices = c("Categorical","Numeric"),
+                                         selected = NULL)
+                             )
+
                     ),
 
-                    p(h5("Before proceeding with the setting of the stratification parameters,
-                         it is important to specify whether the chosen attribute is numeric or categorical")),
-                    fluidRow(
-                     selectInput("strat.var.type", label ="",
-                                 choices = c("Categorical","Numeric"),
-                                 selected = NULL
-                                 )
-
-                    ),
+                    #STRAT VAR VALUES
                     fluidRow(
                       column(6,
                              selectInput("strat.value1", label = "Select possible value fot the selected var:",
                                          choices = NULL,
-                                         multiple = FALSE
-                             )
+                                         multiple = FALSE)
                              ),
+
                       column(6,
                              selectInput("strat.value2", label = "Select possible value fot the selected var:",
                                          choices = NULL,
-                                         multiple = TRUE
-                             ),
+                                         multiple = TRUE),
                              )
                     ),
+
                     tags$hr(),
-                    p(h5("Switch to see if the node reach times are different between the two courts")),
+
                     fluidRow(
-                      materialSwitch(
-                        inputId = "strat.time",
-                        label = "",
-                        status = "default",
-                        right = TRUE)
+                      column(12,
+                             p(h4(strong("Compare for:"))),
+                             br()
+                             )
                     ),
-                    tags$hr(),
-                    p(h5("Switch to see if there is a difference in terms of hit (number of patients per node)among the two courts,
-                         between those who would then reach the Event entred in the", strong("Future State input"))),
+
+
                     fluidRow(
-                      column(3,
+                      column(6,
                              materialSwitch(
-                               inputId = "perc.end",
-                               label = "",
+                               inputId = "strat.time",
+                               label = "times",
                                status = "default",
                                right = TRUE)
                              ),
-                      column(9,
-                             selectInput("final.state", label = "Future State:", choices = unique(data_reactive$EventLog["EVENT"]))
+                      column(6,
+                             materialSwitch(
+                               inputId = "perc.end",
+                               label = "future state",
+                               status = "default",
+                               right = TRUE)
                              )
+                      ),
+
+                    fluidRow(
+                      column(6,
+                             ),
+                      column(6,
+                             selectInput("final.state", label = "Future State:", choices = unique(data_reactive$EventLog["EVENT"]))
+                      )
                     ),
+                    tags$hr(),
 
                     fluidRow(
                       column(8,
@@ -676,10 +745,10 @@ server.careFlow<-function(input,output,session){
   })
 
   observeEvent(input$refresh,{
-    if(data_reactive$max_depth){
+    if(input$max_depth.strat){
       dp<-Inf
     }else{
-      dp<-data_reactive$depth
+      dp<-input$depth.strat
     }
 
 
@@ -689,7 +758,7 @@ server.careFlow<-function(input,output,session){
                                              arr.stratificationValues.A = input$strat.value1,
                                              arr.stratificationValues.B = input$strat.value2,
                                              depth= dp,
-                                             abs.threshold = data_reactive$support,
+                                             abs.threshold = input$support.strat,
                                              checkDurationFromRoot = input$strat.time,
                                              hitsMeansReachAGivenFinalState = input$perc.end,
                                              finalStateForHits = input$final.state ,
@@ -700,7 +769,7 @@ server.careFlow<-function(input,output,session){
         script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                              stratificationValues = c(input$strat.value1,input$strat.value2),
                                              depth= dp,
-                                             abs.threshold = data_reactive$support,
+                                             abs.threshold = input$support.strat,
                                              checkDurationFromRoot = input$strat.time,
                                              hitsMeansReachAGivenFinalState = input$perc.end,
                                              finalStateForHits = input$final.state ,
@@ -714,7 +783,7 @@ server.careFlow<-function(input,output,session){
       script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                            stratificationThreshold = mediana,
                                            depth= dp,
-                                           abs.threshold = data_reactive$support,
+                                           abs.threshold = input$support.strat,
                                            checkDurationFromRoot = input$strat.time,
                                            hitsMeansReachAGivenFinalState = input$perc.end,
                                            finalStateForHits = input$final.state ,
