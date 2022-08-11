@@ -689,6 +689,7 @@ server.FOMM<-function(input,output,session){
     #RENDER DEL GRAFICO KM IN CADO SI DESELEZIONE DEI PATH
     observeEvent(input$render.km.graph,{
 
+
       data_reactive$paths<-all.path
       if(length(data_reactive$paths)<1){
         sendSweetAlert(
@@ -698,18 +699,37 @@ server.FOMM<-function(input,output,session){
           type = "primary"
         )
       }else{
-        fun.out<-render.km.graph.FOMM(data_reactive$paths,input$path.plot)
 
+        if(is.null(input$path.plot)){
+
+          fun.out<-list("id.not.valid"=c())
+        }else{
+
+          fun.out<-render.km.graph.FOMM(data_reactive$paths,input$path.plot)
+        }
 
         output$error.mex<-renderText({
-          if(length(fun.out)!=3){
-            paste("please check values entered for path:",fun.out)
-          }else if(!is.null(fun.out$id.not.valid)){
+          if(length(fun.out)==3 & !is.null(fun.out$id.not.valid)){
             paste("Path",fun.out$id.not.valid, "not shown: please check values entred" )
+            # paste("please check values entered for path:",fun.out)
+          }else if(length(fun.out)==1 & !is.null(fun.out$id.not.valid)){
+            paste("please check values entered for path:",fun.out)
           }else{
             ""
           }
         })
+
+
+
+        # output$error.mex<-renderText({
+        #   if(length(fun.out)!=3){
+        #     paste("please check values entered for path:",fun.out)
+        #   }else if(!is.null(fun.out$id.not.valid)){
+        #     paste("Path",fun.out$id.not.valid, "not shown: please check values entred" )
+        #   }else{
+        #     ""
+        #   }
+        # })
 
         output$km.curves<-renderPlot({
           if(length(fun.out)==3){

@@ -50,6 +50,8 @@ render.km.graph<-function(list.path,path.plot){
     # }
   }
 
+
+
   for (i in c(1:length(path.plot))) {
     path.plot[i]<- gsub(" ","",path.plot[i])
     path.plot[i]<-tolower(path.plot[i])
