@@ -8,6 +8,7 @@
 #'@import DiagrammeR
 #'@import shinyjqui
 #'@import survival
+#'@import survminer
 
 
 
@@ -28,8 +29,12 @@ server.careFlow<-function(input,output,session){
     leaf=FALSE,
     median_time=FALSE,
     node.list = list(),
-    strat.plot = c()
+    strat.plot = c(),
+    paths =list(),
+    paths.to.plot=c()
   )
+
+
 
 
   #TAB EVENTLOG: data visualization of eventlog
@@ -76,93 +81,215 @@ server.careFlow<-function(input,output,session){
       ObjCFM$loadDataset(inputData = ObjDL$getData())
       data_reactive$node.list<-ObjCFM$getDataStructure()$lst.nodi
 
-
-
-      #CARE FLOW PANEL
       removeTab(inputId = "tabs", target = "CareFlowMiner")
       insertTab(inputId = "tabs",
                 tabPanel("CareFlowMiner",
-                         titlePanel("Process Discovery: CareFlowMiner"),
-                         br(),
-                         fluidRow(
-                           column(12,
-                                  sidebarLayout(
-                                    sidebarPanel(
-                                      width = 3,
-                                      p(h3("Parameter Setting")),
-                                      tags$hr(),
+                         titlePanel("CareFlow Miner"),
+                         sidebarLayout(
+                           sidebarPanel(
+                             width = 3,
 
-                                      #parametro profondità
-                                      fluidRow(
-                                        column(7,
-                                               numericInput("depth", label = "Select depth:", value = 5),
-
-                                        ),
-                                        column(5,
-                                               br(),
-                                               br(),
-                                               materialSwitch(
-                                                 inputId = "max_depth",
-                                                 label = "max depth",
-                                                 status = "primary",
-                                                 right = TRUE
-                                               )
-                                        )
-                                      ),
+                             fluidRow(
+                               column(9,
+                                      p(h3("Parameter Setting"))
+                               ),
+                               column(3,
                                       br(),
-                                      tags$hr(),
-                                      #parametro supporto
-                                      fluidRow(
-                                        column(12,
-                                               numericInput("support", label ="Select support value:", value = 10),
+                                      dropdownButton(
+                                        p(h4("CareFlow Miner Section")),
+                                        br(),
 
-                                        )
-                                      ),
+                                        p(h5("A stratification variable can be entered in this section.
+                               In this way it is possible to analyze whether the two groups into which the total population is divided,
+                                    present significant differences in terms of the pathway calculated by the Care Flow Miner")),
+                                        br(),
+
+                                        p(h5("Using the inputs in the Parameter Setting bar, it is possibile to select the stratification var,
+                                    set whether the variable you choose is categorical or numerical, and explicit the specific values for stratification")),
+                                        tags$hr(),
+
+                                        p(h5("The inferential analysis presented is accomplished by considering the",strong("number of patients passing through each node."),
+                                             "it is possible to compare the different sub-courses with respect to", strong("time to arrive at the node"),
+                                             "and for the", strong("probability of experiencing a given event of interest"))),
+
+
+                                        circle = FALSE,
+                                        status = "info",
+                                        size = "xs",
+                                        icon = icon("fas fa-info"),
+                                        width = "300px",
+                                        right = TRUE,
+                                        tooltip = tooltipOptions(title = "Click to more info")
+                                      )
+
+                               )
+                             ),
+                             # fluidRow(
+                             #   column(12,
+                             #          br()
+                             #   )
+                             # ),
+
+                             #CFM PARAMETERS
+                             fluidRow(
+                               column(7,
+                                      numericInput("depth", label = "Select depth:", value = 5),
+
+                               ),
+                               column(5,
                                       br(),
-                                      tags$hr(),
-                                      #parametro duration
-                                      fluidRow(
-                                        column(12,
-                                               materialSwitch(
-                                                 inputId = "time",
-                                                 label = "Show median Time",
-                                                 status = "default",
-                                                 right = TRUE)
-                                        )
-                                      ),
-                                      #parametro foglie out
-                                      fluidRow(
-                                        column(12,
-                                               materialSwitch(
-                                                 inputId = "leaf",
-                                                 label = "Show far leaf",
-                                                 status = "default",
-                                                 right = TRUE)
-                                        )
-                                      ),
-
-
-                                      fluidRow(
-                                        column(12,
-                                               actionButton("EN_EL","Enriched EL Analysis",width = '100%')
-                                               )
+                                      br(),
+                                      materialSwitch(
+                                        inputId = "max_depth",
+                                        label = "max depth",
+                                        status = "primary",
+                                        right = TRUE
                                       )
-                                    ),
+                               )
+                             ),
+                             # br(),
+                             # tags$hr(),
+                             #parametro supporto
+                             fluidRow(
+                               column(12,
+                                      numericInput("support", label ="Select support value:", value = 10),
+
+                               )
+                             ),
+
+                             fluidRow(
+                               column(12,
+                                      materialSwitch(
+                                        inputId = "time",
+                                        label = "Show median Time",
+                                        status = "default",
+                                        right = TRUE)
+                               )
+                             ),
+                             #parametro foglie out
+                             fluidRow(
+                               column(12,
+                                      materialSwitch(
+                                        inputId = "leaf",
+                                        label = "Show far leaf",
+                                        status = "default",
+                                        right = TRUE)
+                               )
+                             ),
+
+                             tags$hr(),
+
+                             fluidRow(
+                               column(12,
+                                      materialSwitch(
+                                        inputId = "strat_CFM",
+                                        label = "Inferential Analysis",
+                                        status = "default",
+                                        right = TRUE)
+
+                               )
+                             ),
 
 
-                                    mainPanel(
-                                        jqui_resizable(grVizOutput("CareFlowGraph"))
+                             conditionalPanel("input.strat_CFM",
+                                              fluidRow(
+                                                #stratification var
+                                                column(6,
+                                                       selectInput("strat.var", label = "Select variable for the stratification:",
+                                                                   choices = colnames(data_reactive$EventLog)[!(colnames(data_reactive$EventLog) %in% c("ID","DATE_INI","EVENT"))],
+                                                                   selected = NULL)
+                                                ),
+                                                #stratification var TYPE
+                                                column(6,
+                                                       selectInput("strat.var.type", label ="Select the stratification variable type:",
+                                                                   choices = c("Categorical","Numeric"),
+                                                                   selected = NULL)
+                                                )
 
-                                      )
-                                  )
+                                              ),
+
+                                              #STRAT VAR VALUES
+                                              fluidRow(
+                                                column(6,
+                                                       selectInput("strat.value1", label = "Select possible value fot the selected var:",
+                                                                   choices = NULL,
+                                                                   multiple = FALSE)
+                                                ),
+
+                                                column(6,
+                                                       selectInput("strat.value2", label = "Select possible value fot the selected var:",
+                                                                   choices = NULL,
+                                                                   multiple = TRUE),
+                                                )
+                                              ),
+
+                                              tags$hr(),
+
+                                              fluidRow(
+                                                column(12,
+                                                       p(h4(strong("Compare for:"))),
+                                                       br()
+                                                )
+                                              ),
+
+
+                                              fluidRow(
+                                                column(6,
+                                                       materialSwitch(
+                                                         inputId = "strat.time",
+                                                         label = "times",
+                                                         status = "default",
+                                                         right = TRUE)
+                                                ),
+                                                column(6,
+                                                       materialSwitch(
+                                                         inputId = "perc.end",
+                                                         label = "future state",
+                                                         status = "default",
+                                                         right = TRUE)
+                                                )
+                                              ),
+
+                                              fluidRow(
+                                                column(6,
+                                                ),
+                                                column(6,
+                                                       selectInput("final.state", label = "Future State:", choices = unique(data_reactive$EventLog["EVENT"]))
+                                                )
+                                              ),
+
+                                              tags$hr(),
+
+                                              fluidRow(
+                                                column(8,
+                                                ),
+                                                column(4,
+                                                       actionButton("refresh","Refresh graph")
+                                                )
+                                              )
+
+                                              ),
+
+
+
+
+                           ),
+                           mainPanel(
+                             conditionalPanel("input.strat_CFM",
+                                              jqui_resizable(grVizOutput("CF.strat"))
+                             ),
+                             conditionalPanel("!input.strat_CFM",
+                                              jqui_resizable(grVizOutput("CareFlowGraph"))
+                                              )
+
                            )
-                         ),
-
-
+                         )
                 ),
                 target = "Loading EventLog",
                 position = "after"
       )
+
+
 
       ################################################################### PREDICTIVE PANEL ####################################################################
       removeTab(inputId = "tabs", target = "Probabilistic CareFlowMiner")
@@ -249,15 +376,13 @@ server.careFlow<-function(input,output,session){
       insertTab(inputId = "tabs",
                 tabPanel("Survival Analysis",
                          titlePanel("Process Discovery: Survival Analysis"),
-                         br(),
                          fluidRow(
                            column(12,
                                   sidebarLayout(
                                     sidebarPanel(
-                                      width = 3,
+                                      width = 4,
                                       fluidRow(
                                         column(9,
-                                               p(h3("Parameter Setting")),
                                         ),
                                         column(3,
                                                dropdownButton(
@@ -282,50 +407,45 @@ server.careFlow<-function(input,output,session){
                                                  right = TRUE,
                                                  tooltip = tooltipOptions(title = "Click to more info")
                                                )
-
+                                        )
+                                      ),
+                                      fluidRow(
+                                        tabsetPanel(id = "path.tab",
+                                          tabPanel("Path 1",
+                                                   path_mod_ui("path1",tit = "Path 1" ,
+                                                               is.fomm= FALSE,
+                                                               node.list=data_reactive$node.list,
+                                                               el.data = data_reactive$EventLog,
+                                                               is.strat.var = FALSE )
+                                                   )
                                         )
                                       ),
                                       fluidRow(
                                         column(12,
                                                br()
-                                        )
-                                      ),
-
-                                      #KAPLAN MAIER PARAM: FIRST ROW--> ID FROM & ID TO
-                                      fluidRow(
-                                        column(6,
-                                               numericInput("id.start", label = "id node start:", value = 1)
-                                               ),
-                                        column(6,
-                                               numericInput("id.end", label = "id node end:", value = NULL)
                                                )
-                                        ),
-
-                                      fluidRow(
-                                        column(6,
-                                               selectInput(inputId = "id.cens",
-                                                           label = "id node censored:",
-                                                           choices = names(data_reactive$node.list),
-                                                           selected = NULL,
-                                                           multiple = TRUE
-                                                           )
-                                        ),
-
-                                        column(6,
-                                               materialSwitch(
-                                                 inputId = "cens.leaf",
-                                                 label = "Use leaf for cens",
-                                                 status = "default",
-                                                 right = TRUE)
-                                        )
                                       ),
 
-
-                                    ),
-
-                                    mainPanel(
                                       fluidRow(
-                                        column(11,
+                                       column(4,
+                                              actionButton("add.path","Add path")
+                                              ),
+                                       column(4,
+                                              actionButton("plot.all.surv","Show Kaplan Meier")
+                                              ),
+                                       column(4,
+                                              actionButton("reset","Reset path")
+                                              )
+                                      )
+
+                                      ),
+                                    mainPanel(
+
+                                      fluidRow(
+                                        column(10,
+
+                                               span(textOutput("error.mex"),style="color:gray")
+
                                         ),
                                         column(1,
                                                dropdownButton(
@@ -334,18 +454,45 @@ server.careFlow<-function(input,output,session){
                                                  circle = FALSE,
                                                  status = "primary",
                                                  size = "xs",
-                                                 icon = icon("fas fa-info"),
+                                                 icon = icon("project-diagram"),
                                                  width = "1000px",
                                                  right = TRUE,
                                                  tags$div(style = "height: 100px;"),
                                                  tooltip = tooltipOptions(title = "Click to more info")
                                                )
+                                        ),
+                                        column(1,
+                                               dropdownButton(
+                                                 p(h4(strong("Select path to plot"))),
+                                                 checkboxGroupInput("path.plot", label = "",
+                                                                    choices = "path1",
+                                                                    selected = "path1"),
+                                                 actionButton("render.km.graph","Refresh graph"),
 
+
+                                                 circle = FALSE,
+                                                 status = "danger",
+                                                 size = "xs",
+                                                 icon = icon("cogs"),
+                                                 width = "100px",
+                                                 right = TRUE,
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+                                               # uiOutput("select.path")
+
+                                        )
+
+                                      ),
+                                      fluidRow(
+                                        column(12,
+                                               plotOutput("km.curves",width =  "100%")
                                         )
                                       ),
                                       fluidRow(
-                                        plotOutput("surv.curve")
-                                      )
+                                        column(12,
+                                               DT::dataTableOutput("logrank.res")
+                                               )
+                                      ), height = "100%"
                                     )
                                   )
                            )
@@ -357,23 +504,330 @@ server.careFlow<-function(input,output,session){
       )
     }
 
-    surv.graph<-reactive({
-      plotKM<-KM_CFM(ObjCFM,
-                   input$id.start,
-                   input$id.end,
-                   input$cens.leaf,
-                   input$id.cens,
-                   ObjDL,
-                   UM="days")
-      if(is.null(plotKM)){
-        validate("please check the inputs")
-      }else{
-        return(plotKM)
-      }
+
+
+
+    callModule(path_data_server,
+               "path1",
+               data_reactive$EventLog,
+               input$add.path+1,
+               is.fomm= FALSE)
+
+
+    #ADD TAB PATH E AGGIORNO CHECKBOX PATH TO PLOT
+    observeEvent(input$add.path,{
+
+      insertTab("path.tab",
+                tabPanel(paste("Path",input$add.path+1),
+                  path_mod_ui(paste0("path",input$add.path+1),
+                              tit = paste("Path",input$add.path+1),
+                              is.fomm= FALSE,
+                              node.list=data_reactive$node.list,
+                              el.data = data_reactive$EventLog,
+                              is.strat.var=FALSE
+                              )
+                ),
+                # path_mod_ui("path",tit = paste0("Path",input$add.path+1) ,node.list=data_reactive$node.list),
+                target = paste("Path", input$add.path),
+                position = "after",select = TRUE
+                )
+
+
+
+
+
+      callModule(path_data_server,session = session,
+                 paste0("path",input$add.path+1),
+                 data_reactive$EventLog,
+                 input$add.path+1,
+                 is.fomm= FALSE)
+
+      data_reactive$paths<-all.path
+      choices_list<-names(all.path)
+
+      # choices_list<-unlist(lapply(0:length(all.path)+1, function(path.num){ paste("path",path.num)}))
+
+
+
+
+      updateCheckboxGroupInput(session, inputId = "path.plot",
+                               label = "",
+                               choices = choices_list ,
+                               selected =choices_list)
+
+      })
+
+    observeEvent(input$reset,{
+      all.path<<-list()
+      data_reactive$paths<<-all.path
+      data_reactive$data_reactive$paths.to.plot<-"path1"
+      choices_list<-"path1"
+      updateCheckboxGroupInput(session, inputId = "path.plot",
+                               label = "",
+                               choices = choices_list ,
+                               selected =choices_list)
+      output$km.curves<-renderPlot({
+        NULL
+      })
+      output$logrank.res<- DT::renderDataTable({
+        data.frame()
+      })
+
+      output$error.mex<-renderText("")
+
+      removeTab(inputId = "tabs", target = "Survival Analysis")
+      insertTab(inputId = "tabs",
+                tabPanel("Survival Analysis",
+                         titlePanel("Process Discovery: Survival Analysis"),
+                         fluidRow(
+                           column(12,
+                                  sidebarLayout(
+                                    sidebarPanel(
+                                      width = 4,
+                                      fluidRow(
+                                        column(9,
+                                        ),
+                                        column(3,
+                                               dropdownButton(
+                                                 tags$h4(strong("Survival Analysis with Kaplan Meier")),
+
+                                                 tags$h5("The cohort consists of patients transiting through the node chosen as the start node,
+                                                         which must be selected in the ", strong("\"node id start\" field."),"and who have experienced a certain state of interest,
+                                                         which must be made explicit in the", strong("\"node id end\" field.")),
+
+                                                 tags$h5("Through the", strong("\"id node censored\" field") ," it will be possible to indicate in which nodes the patients will have to transit
+                                                 to in order to be considered censored."),
+
+
+                                                 tags$h5("using the input ",strong("\"use leaf as cens\"")," it will be possible to choose whether to follow the clinical follow-up of patients up to the last event they experienced"),
+
+
+                                                 circle = FALSE,
+                                                 status = "info",
+                                                 size = "xs",
+                                                 icon = icon("fas fa-info"),
+                                                 width = "300px",
+                                                 right = TRUE,
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+                                        )
+                                      ),
+                                      fluidRow(
+                                        tabsetPanel(id = "path.tab",
+                                                    tabPanel("Path 1",
+                                                             path_mod_ui("path1",tit = "Path 1" ,
+                                                                         is.fomm= FALSE,
+                                                                         node.list=data_reactive$node.list,
+                                                                         el.data = data_reactive$EventLog,
+                                                                         is.strat.var = FALSE )
+                                                    )
+                                        )
+                                      ),
+                                      fluidRow(
+                                        column(12,
+                                               br()
+                                        )
+                                      ),
+
+                                      fluidRow(
+                                        column(4,
+                                               actionButton("add.path","Add path")
+                                        ),
+                                        column(4,
+                                               actionButton("plot.all.surv","Show Kaplan Meier")
+                                        ),
+                                        column(4,
+                                               actionButton("reset","Reset path")
+                                        )
+                                      )
+
+                                    ),
+                                    mainPanel(
+
+                                      fluidRow(
+                                        column(10,
+
+                                               span(textOutput("error.mex"),style="color:gray")
+
+                                        ),
+                                        column(1,
+                                               dropdownButton(
+                                                 grVizOutput("prev.cfm"),
+
+                                                 circle = FALSE,
+                                                 status = "primary",
+                                                 size = "xs",
+                                                 icon = icon("project-diagram"),
+                                                 width = "1000px",
+                                                 right = TRUE,
+                                                 tags$div(style = "height: 100px;"),
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+                                        ),
+                                        column(1,
+                                               dropdownButton(
+                                                 p(h4(strong("Select path to plot"))),
+                                                 checkboxGroupInput("path.plot", label = "",
+                                                                    choices = "path1",
+                                                                    selected = "path1"),
+                                                 actionButton("render.km.graph","Refresh graph"),
+
+
+                                                 circle = FALSE,
+                                                 status = "danger",
+                                                 size = "xs",
+                                                 icon = icon("cogs"),
+                                                 width = "100px",
+                                                 right = TRUE,
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+                                               # uiOutput("select.path")
+
+                                        )
+
+                                      ),
+                                      fluidRow(
+                                        column(12,
+                                               plotOutput("km.curves",width =  "100%")
+                                        )
+                                      ),
+                                      fluidRow(
+                                        column(12,
+                                               DT::dataTableOutput("logrank.res")
+                                        )
+                                      ), height = "100%"
+                                    )
+                                  )
+                           )
+                         )
+
+                ),
+                target = "Probabilistic CareFlowMiner",
+                position = "after",select = TRUE)
+
+
     })
 
-    output$surv.curve<-renderPlot(surv.graph())
 
+
+    #CREAZIONE DEL PLOT KM
+    observeEvent(input$plot.all.surv,{
+      data_reactive$paths<-all.path
+
+      choices_list<-names(data_reactive$paths)
+
+      updateCheckboxGroupInput(session, inputId = "path.plot",
+                               label = "",
+                               choices = choices_list ,
+                               selected =choices_list)
+      data_reactive$paths.to.plot<-names(data_reactive$paths)
+
+
+
+
+
+
+
+    if(length(data_reactive$paths)==0){
+      sendSweetAlert(
+        session = session,
+        title = "Error",
+        text = "Every time you create a new path please save it using the proper button",
+        type = "primary"
+      )
+    }else{
+
+      fun.out<-render.km.graph(data_reactive$paths,data_reactive$paths.to.plot)
+
+
+      output$error.mex<-renderText({
+        #caso in cui non ho trovato
+        if(length(fun.out)!=3){
+          paste("please check values entered for path:",fun.out)
+        }else if(!is.null(fun.out$id.not.valid)){
+          paste("Path",fun.out$id.not.valid, "not shown: please check values entred" )
+        }else{
+          ""
+        }
+      })
+
+      output$km.curves<-renderPlot({
+        if(length(fun.out)==3){
+          survminer::ggsurvplot(fun.out$final.surv,
+                     data = fun.out$final.data,
+                     conf.int = TRUE,          # Add confidence interval
+                     risk.table = TRUE,        # Add risk table
+                     risk.table.height = 0.27,
+                     risk.table.col = "strata"# Risk table color by groups
+          )
+        }else{
+
+        }
+      })
+
+      output$logrank.res<- DT::renderDataTable({
+        p(h4(strong("Results of Logrank test on Paths")))
+        if(length(all.path)>1){
+          logrank_fun(fun.out)
+        }else{
+          data.frame()
+        }
+
+      })
+
+    }
+
+
+    })
+
+
+    #RENDER DEL GRAFICO KM IN CADO SI DESELEZIONE DEI PATH
+    observeEvent(input$render.km.graph,{
+
+      data_reactive$paths<-all.path
+      if(length(data_reactive$paths)<1){
+        sendSweetAlert(
+          session = session,
+          title = "Error",
+          text = "Every time you create a new path please save it using the proper button",
+          type = "primary"
+        )
+      }else{
+        fun.out<-render.km.graph(data_reactive$paths,input$path.plot)
+
+
+        output$error.mex<-renderText({
+          if(length(fun.out)!=3){
+            paste("please check values entered for path:",fun.out)
+          }else if(!is.null(fun.out$id.not.valid)){
+            paste("Path",fun.out$id.not.valid, "not shown: please check values entred" )
+          }else{
+            ""
+          }
+        })
+
+        output$km.curves<-renderPlot({
+          if(length(fun.out)==3){
+            ggsurvplot(fun.out$final.surv,
+                       data = fun.out$final.data,
+                       conf.int = TRUE,          # Add confidence interval
+                       risk.table = TRUE,        # Add risk table
+                       risk.table.height = 0.27,
+                       risk.table.col = "strata"# Risk table color by groups
+            )
+          }else{
+
+          }
+        })
+      }
+
+
+    })
+
+
+    observeEvent(input$path.plot,{
+      data_reactive$paths.to.plot<-input$path.plot
+    })
 
    observeEvent(input$depth, {
      if(is.na(input$depth)){
@@ -508,175 +962,7 @@ server.careFlow<-function(input,output,session){
 
   })
 
-  ########################################################## STRATIFIED CF PANEL #################################################
-  observeEvent(input$EN_EL,{
-    removeTab(inputId = "tabs", target = "Stratified CareFlowMiner")
-    insertTab(inputId = "tabs",
-              tabPanel("Stratified CareFlowMiner",
-                titlePanel("Stratification of the CareFlow Miner"),
-                sidebarLayout(
-                  sidebarPanel(
-                    width = 3,
 
-                    fluidRow(
-                      column(9,
-                             p(h3("Parameter Setting"))
-                      ),
-                      column(3,
-                             br(),
-                             dropdownButton(
-                               p(h4("Stratification of the CareFlow Miner")),
-                               br(),
-
-                               p(h5("A stratification variable can be entered in this section.
-                               In this way it is possible to analyze whether the two groups into which the total population is divided,
-                                    present significant differences in terms of the pathway calculated by the Care Flow Miner")),
-                               br(),
-
-                               p(h5("Using the inputs in the Parameter Setting bar, it is possibile to select the stratification var,
-                                    set whether the variable you choose is categorical or numerical, and explicit the specific values for stratification")),
-                               tags$hr(),
-
-                               p(h5("The inferential analysis presented is accomplished by considering the",strong("number of patients passing through each node."),
-                                    "it is possible to compare the different sub-courses with respect to", strong("time to arrive at the node"),
-                                    "and for the", strong("probability of experiencing a given event of interest"))),
-
-
-                               circle = FALSE,
-                               status = "info",
-                               size = "xs",
-                               icon = icon("fas fa-info"),
-                               width = "300px",
-                               right = TRUE,
-                               tooltip = tooltipOptions(title = "Click to more info")
-                             )
-
-                      )
-                    ),
-                    # fluidRow(
-                    #   column(12,
-                    #          br()
-                    #   )
-                    # ),
-
-                    #CFM PARAMETERS
-                    fluidRow(
-                      column(7,
-                             numericInput("depth.strat", label = "Select depth:", value = 5),
-
-                      ),
-                      column(5,
-                             br(),
-                             br(),
-                             materialSwitch(
-                               inputId = "max_depth.strat",
-                               label = "max depth",
-                               status = "primary",
-                               right = TRUE
-                             )
-                      )
-                    ),
-                    # br(),
-                    # tags$hr(),
-                    #parametro supporto
-                    fluidRow(
-                      column(12,
-                             numericInput("support.strat", label ="Select support value:", value = 10),
-
-                      )
-                    ),
-
-                    tags$hr(),
-
-                    fluidRow(
-                      #stratification var
-                      column(6,
-                             selectInput("strat.var", label = "Select variable for the stratification:",
-                                         choices = colnames(data_reactive$EventLog)[!(colnames(data_reactive$EventLog) %in% c("ID","DATE_INI","EVENT"))],
-                                         selected = NULL)
-                             ),
-                      #stratification var TYPE
-                      column(6,
-                             selectInput("strat.var.type", label ="Select the stratification variable type:",
-                                         choices = c("Categorical","Numeric"),
-                                         selected = NULL)
-                             )
-
-                    ),
-
-                    #STRAT VAR VALUES
-                    fluidRow(
-                      column(6,
-                             selectInput("strat.value1", label = "Select possible value fot the selected var:",
-                                         choices = NULL,
-                                         multiple = FALSE)
-                             ),
-
-                      column(6,
-                             selectInput("strat.value2", label = "Select possible value fot the selected var:",
-                                         choices = NULL,
-                                         multiple = TRUE),
-                             )
-                    ),
-
-                    tags$hr(),
-
-                    fluidRow(
-                      column(12,
-                             p(h4(strong("Compare for:"))),
-                             br()
-                             )
-                    ),
-
-
-                    fluidRow(
-                      column(6,
-                             materialSwitch(
-                               inputId = "strat.time",
-                               label = "times",
-                               status = "default",
-                               right = TRUE)
-                             ),
-                      column(6,
-                             materialSwitch(
-                               inputId = "perc.end",
-                               label = "future state",
-                               status = "default",
-                               right = TRUE)
-                             )
-                      ),
-
-                    fluidRow(
-                      column(6,
-                             ),
-                      column(6,
-                             selectInput("final.state", label = "Future State:", choices = unique(data_reactive$EventLog["EVENT"]))
-                      )
-                    ),
-                    tags$hr(),
-
-                    fluidRow(
-                      column(8,
-                      ),
-                      column(4,
-                             actionButton("refresh","Refresh graph")
-                             )
-                    )
-
-
-
-                  ),
-                  mainPanel(
-                    jqui_resizable(grVizOutput("CF.strat")),
-                    # actionButton("refresh","Refresh graph",width = '30%')
-                  )
-                )
-              ),
-              target = "Probabilistic CareFlowMiner",
-              position = "after"
-    )
-
-  })
 
   observeEvent(input$strat.var,{
     shiny::updateSelectInput(
@@ -745,10 +1031,10 @@ server.careFlow<-function(input,output,session){
   })
 
   observeEvent(input$refresh,{
-    if(input$max_depth.strat){
+    if(input$max_depth){
       dp<-Inf
     }else{
-      dp<-input$depth.strat
+      dp<-input$depth
     }
 
 
@@ -758,7 +1044,7 @@ server.careFlow<-function(input,output,session){
                                              arr.stratificationValues.A = input$strat.value1,
                                              arr.stratificationValues.B = input$strat.value2,
                                              depth= dp,
-                                             abs.threshold = input$support.strat,
+                                             abs.threshold = input$support,
                                              checkDurationFromRoot = input$strat.time,
                                              hitsMeansReachAGivenFinalState = input$perc.end,
                                              finalStateForHits = input$final.state ,
@@ -769,7 +1055,7 @@ server.careFlow<-function(input,output,session){
         script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                              stratificationValues = c(input$strat.value1,input$strat.value2),
                                              depth= dp,
-                                             abs.threshold = input$support.strat,
+                                             abs.threshold = input$support,
                                              checkDurationFromRoot = input$strat.time,
                                              hitsMeansReachAGivenFinalState = input$perc.end,
                                              finalStateForHits = input$final.state ,
@@ -783,7 +1069,7 @@ server.careFlow<-function(input,output,session){
       script<-ObjCFM$plotCFGraphComparison(stratifyFor = input$strat.var,
                                            stratificationThreshold = mediana,
                                            depth= dp,
-                                           abs.threshold = input$support.strat,
+                                           abs.threshold = input$support,
                                            checkDurationFromRoot = input$strat.time,
                                            hitsMeansReachAGivenFinalState = input$perc.end,
                                            finalStateForHits = input$final.state ,

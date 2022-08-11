@@ -10,6 +10,7 @@
 
 careFlow.mod<-function(){
   all.data<<-list()
+  all.path<<-list()
   shinyApp(ui =fluidPage(
     #Pagina Principale
     navbarPage("pMining: CareFlow Mining", id="tabs",

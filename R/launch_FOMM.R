@@ -12,6 +12,7 @@
 
 FOMM.mod<-function(){
   all.data<<-list()
+  all.path<<-list()
   shinyApp(ui =fluidPage(
     #Pagina Principale
     navbarPage("pMining: First Order Markov Model", id="tabs",

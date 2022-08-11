@@ -11,7 +11,10 @@ KM_CFM(
   cens.leaf = TRUE,
   id.cens = c(),
   ObjDL,
-  UM = "days"
+  UM = "mins",
+  min_time = 0,
+  max_time = Inf,
+  id_strat = c()
 )
 }
 \description{

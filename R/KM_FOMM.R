@@ -1,34 +1,3 @@
-#
-#
-# param= list("threshold"=0.01, "considerAutoLoop"= FALSE)
-# FOMM<-firstOrderMarkovModel(parameters.list = param)
-# FOMM$loadDataset(dataList = ObjDL$getData())
-# FOMM$trainModel()
-# fomm.plot<-FOMM$getModel(kindOfOutput = "grViz")
-# grViz(fomm.plot)
-# out<-ObjDL$getData()
-# passingThrough=c("Covid")
-# passingNotThrough=c()
-# stoppingAt=c("Discharge")
-# stoppingNotAt=c()
-# PDVAt=c("Subintensive","Cardiology")
-# withPatientID=c()
-# UM="days"
-# #
-# fromState<-"AccessToHospital"
-# toState<-"ICU"
-# MM.pat.process<-out$pat.process
-# MM.csv.parameters<-list()
-# MM.csv.parameters$csv.column.names <- out$csv.column.names
-# MM.csv.parameters$csv.IDName <- out$csv.IDName
-# MM.csv.parameters$csv.EVENTName <- out$csv.EVENTName
-# MM.csv.parameters$csv.dateColumnName <- out$csv.dateColumnName
-# MM.csv.parameters$csv.date.format <- out$csv.date.format
-# MM.csv.parameters$csv.max.pMineR.internal.ID.Evt <- out$csv.max.pMineR.internal.ID.Evt
-
-
-
-
 
 #'@title KM function
 #'
@@ -39,7 +8,7 @@
 #===========================================================
 # KaplanMeier
 #===========================================================
-KaplanMeier<-function( fromState, toState,ObjDL,
+KM_FOMM<-function( fromState, toState,ObjDL,
                        passingThrough=c(), passingNotThrough=c(), stoppingAt=c(),
                        stoppingNotAt=c(), PDVAt=c(), withPatientID=c() , UM="mins" )  {
   out<-ObjDL$getData()
