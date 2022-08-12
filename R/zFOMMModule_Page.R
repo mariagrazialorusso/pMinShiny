@@ -61,9 +61,12 @@ server.FOMM<-function(input,output,session){
       # Creating Dl obj e CFM obj
 
       if(is.factor(data_reactive$EventLog$EVENT)) { data_reactive$EventLog$EVENT <- as.character(data_reactive$EventLog$EVENT)  }
+      showModal(modalDialog(title = "Data loading may take a few moments",
+                            easyClose = TRUE, footer=NULL))
       ObjDL<<-dataLoader(verbose.mode = FALSE)
       ObjDL$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
                             format.column.date = "%Y-%m-%d")
+      removeModal()
 
 
 

@@ -20,7 +20,7 @@ logrank_fun<-function(out.fun){
   not.to.check<-which(names(all.path) %in% paste0("path",out.fun$id.not.valid)==TRUE)
 
 
-  if(length(out.fun)==3){
+  if(length(out.fun)==3 & length(to.combine)>1){
     coppie<-t(combn(to.combine,2))
     for (i in c(1:nrow(coppie))) {
       res<-survdiff(Surv(time, outcome) ~ path,

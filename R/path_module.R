@@ -55,7 +55,13 @@ path_mod_ui<- function(id, tit,
                              title = "select event ")
                )
              }else{
-               numericInput(ns("id.end"), label = "id node end:", value = NULL, min = 0)
+               # numericInput(ns("id.end"), label = "id node end:", value = NULL, min = 0)
+               selectInput(inputId = ns("id.end"),
+                           label = "id node end:",
+                           choices = names(node.list),
+                           selected = NULL,
+                           multiple = TRUE
+               )
              }
 
       )

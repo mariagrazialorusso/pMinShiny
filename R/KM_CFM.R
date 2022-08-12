@@ -79,10 +79,24 @@ KM_CFM<-function(ObjCFM,
 
 
     #controllo che nodo end sia nel sottoalbero che inizia con nodo start
-    check<-which(s$lst.nodi[[as.character(id.start)]]$IPP %in% s$lst.nodi[[as.character(id.end)]]$IPP)
-    if(identical(check, integer(0))){
+    check.flag<-c()
+
+    for (i in c(1:length(id.end))) {
+      check<-which(s$lst.nodi[[as.character(id.start)]]$IPP %in% s$lst.nodi[[as.character(id.end[i])]]$IPP)
+      check.flag[i]<-identical(check, integer(0))
+    }
+
+
+    if(length(which(check.flag==TRUE))>0){
       to_ret<-NULL
     }else{
+
+
+
+    # check<-which(s$lst.nodi[[as.character(id.start)]]$IPP %in% s$lst.nodi[[as.character(id.end)]]$IPP)
+    # if(identical(check, integer(0))){
+    #   to_ret<-NULL
+    # }else{
 
 
       #ciclo su tutti gli id di coorte e calcolo deltaT come:

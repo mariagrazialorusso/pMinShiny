@@ -68,18 +68,27 @@ server.careFlow<-function(input,output,session){
       data_reactive$EventLog<-data.frame()
     }else{
 
-      #check factors
+
+
+
+
+       #check factors
 
       if(is.factor(data_reactive$EventLog$EVENT)) { data_reactive$EventLog$EVENT <- as.character(data_reactive$EventLog$EVENT)  }
 
 
       # Creating Dl obj e CFM obj
+
+      showModal(modalDialog(title = "Data loading may take a few moments",
+                            easyClose = TRUE, footer=NULL))
       ObjDL<<-dataLoader(verbose.mode = FALSE)
       ObjDL$load.data.frame(mydata =data_reactive$EventLog ,IDName = "ID",EVENTName = "EVENT",dateColumnName = "DATE_INI",
                             format.column.date = "%Y-%m-%d")
       ObjCFM<<-careFlowMiner(verbose.mode = FALSE)
       ObjCFM$loadDataset(inputData = ObjDL$getData())
       data_reactive$node.list<-ObjCFM$getDataStructure()$lst.nodi
+      removeModal()
+
 
       removeTab(inputId = "tabs", target = "CareFlowMiner")
       insertTab(inputId = "tabs",
@@ -449,7 +458,20 @@ server.careFlow<-function(input,output,session){
                                         ),
                                         column(1,
                                                dropdownButton(
-                                                 grVizOutput("prev.cfm"),
+                                                 fluidRow(
+                                                   column(12,
+                                                          selectInput(inputId = "prev.cfm.type",
+                                                                      label = "select which type of CFM chart you want to inspect",
+                                                                      choices = c("CFM","Stratified CFM","Predictive CFM")
+                                                                      )
+                                                          )
+                                                 ),
+                                                 fluidRow(
+                                                   column(12,
+                                                          grVizOutput("prev.cfm")
+                                                          )
+                                                 ),
+
 
                                                  circle = FALSE,
                                                  status = "primary",
@@ -652,7 +674,20 @@ server.careFlow<-function(input,output,session){
                                         ),
                                         column(1,
                                                dropdownButton(
-                                                 grVizOutput("prev.cfm"),
+                                                 fluidRow(
+                                                   column(12,
+                                                          selectInput(inputId = "prev.cfm.type",
+                                                                      label = "select which type of CFM chart you want to inspect",
+                                                                      choices = c("CFM","Stratified CFM","Predictive CFM")
+                                                          )
+                                                   )
+                                                 ),
+                                                 fluidRow(
+                                                   column(12,
+                                                          grVizOutput("prev.cfm")
+                                                   )
+                                                 ),
+                                                 # grVizOutput("prev.cfm"),
 
                                                  circle = FALSE,
                                                  status = "primary",
@@ -935,7 +970,19 @@ server.careFlow<-function(input,output,session){
    })
 
    output$prev.cfm<-renderGrViz({
-     grViz(CFgraph())
+     cfm.type<-input$prev.cfm.type
+     switch (cfm.type,
+       "CFM" = {grViz(CFgraph())},
+       "Stratified CFM"={
+         if(is.null(data_reactive$strat.plot)){
+           validate("To view this representation, it is first necessary to set the necessary parameters in the \"Care Flow Miner\" section")
+         }else{
+           grViz(data_reactive$strat.plot)
+         }
+       },
+       "Predictive CFM"={grViz(CFgraph.pred())}
+     )
+
    })
 
 
