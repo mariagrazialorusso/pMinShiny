@@ -31,7 +31,8 @@ server.careFlow<-function(input,output,session){
     node.list = list(),
     strat.plot = c(),
     paths =list(),
-    paths.to.plot=c()
+    paths.to.plot=c(),
+    tabs.node.end = list()
   )
 
 
@@ -524,7 +525,267 @@ server.careFlow<-function(input,output,session){
                 target = "Probabilistic CareFlowMiner",
                 position = "after"
       )
+
+
+      ################################################################### PLOT COV NODE PANEL ###############################################################
+      removeTab(inputId = "tabs", target = "Covariate Visualization")
+      insertTab(inputId = "tabs",
+                tabPanel("Covariate Visualization",
+                         titlePanel("CFM node Descriptive: Covariate Visualization"),
+                         fluidRow(
+                           column(12,
+                                  sidebarLayout(
+                                    sidebarPanel(
+                                      fluidRow(
+                                        column(8,
+                                               pickerInput(inputId = "covariate",
+                                                           label = "Select covariate",
+                                                           choices =colnames(data_reactive$EventLog)[!(colnames(data_reactive$EventLog) %in% c("ID","DATE_INI","EVENT"))],
+                                                           selected = NULL,
+                                                           multiple = FALSE,
+                                                           options = list(
+                                                             title = "select var"))
+                                        ),
+                                        column(4,
+                                               br(),
+                                               # materialSwitch(
+                                               #   inputId = "is.numerical",
+                                               #   label = "is numerical",
+                                               #   status = "default",
+                                               #   right = TRUE)
+                                        )
+                                      ),
+                                      fluidRow(
+                                        column(9,
+                                               selectInput(inputId = "node.start.cov",
+                                                           label = "Select node start",
+                                                           choices =names(data_reactive$node.list),
+                                                           selected = NULL,
+                                                           multiple = TRUE)
+                                               ),
+                                        column(3,
+                                               br(),
+                                               actionButton("add.node.end","add node end",width = "100%")
+                                               )
+                                      ),
+                                      tags$hr(),
+                                      fluidRow(
+                                        column(12,
+                                               uiOutput("node.end.sel")
+                                        )
+                                      ),
+                                      fluidRow(
+                                        column(3,offset = 9,
+                                               br(),
+                                               actionButton("plot.cov.graph","plot graph",width = "100%")
+                                               )
+
+                                      )
+
+                                    ),
+                                    mainPanel(
+                                      fluidRow(
+                                        column(10,
+                                               shiny::plotOutput("cov_time_graph")
+                                               ),
+                                        column(1,
+                                               dropdownButton(
+                                                 fluidRow(
+                                                   column(12,
+                                                          selectInput(inputId = "prev.cfm.type.cov",
+                                                                      label = "select which type of CFM chart you want to inspect",
+                                                                      choices = c("CFM","Stratified CFM","Predictive CFM")
+                                                          )
+                                                   )
+                                                 ),
+                                                 fluidRow(
+                                                   column(12,
+                                                          grVizOutput("prev.cfm.cov")
+                                                   )
+                                                 ),
+                                                 # grVizOutput("prev.cfm"),
+
+                                                 circle = FALSE,
+                                                 status = "primary",
+                                                 size = "xs",
+                                                 icon = icon("project-diagram"),
+                                                 width = "1000px",
+                                                 right = TRUE,
+                                                 tags$div(style = "height: 100px;"),
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+                                               ),
+                                        column(1,
+                                               dropdownButton(
+                                                 p(h4(strong("Plot settings"))),
+                                                 fluidRow(
+                                                   column(6,
+                                                          selectInput(inputId = "UM.cov.plot",
+                                                                      label = "Select Time unit",
+                                                                      choices = c("mins","days","weeks","months","years"),
+                                                                      selected = "days")
+                                                   ),
+                                                   column(6,
+                                                          selectInput(inputId = "legend.pos.cov",
+                                                                      label = "Set legend position",
+                                                                      choices = c("bottomright", "bottom", "bottomleft",
+                                                                                  "left", "topleft", "top", "topright", "right", "center"),
+                                                                      selected = "topleft")
+                                                   )
+                                                 ),
+                                                 fluidRow(
+                                                   column(6,
+                                                          materialSwitch(
+                                                            inputId = "reg.line",
+                                                            label = "plot regression line",
+                                                            status = "primary",
+                                                            right = TRUE
+                                                          )
+                                                          )
+                                                 ),
+
+                                                 #  UM="days",
+
+                                                 # plot.RegressionLine=FALSE,
+                                                 #legend position
+                                                 # =
+
+
+
+
+
+
+
+                                                 circle = FALSE,
+                                                 status = "danger",
+                                                 size = "xs",
+                                                 icon = icon("cogs"),
+                                                 width = "400px",
+                                                 right = TRUE,
+                                                 tooltip = tooltipOptions(title = "Click to more info")
+                                               )
+                                               )
+                                      )
+
+
+                                    )
+                                  )
+                                  )
+                         )
+
+                ),
+                target = "Survival Analysis",
+                position = "after"
+      )
+
+
     }
+
+    observeEvent(input$add.node.end,{
+      if(!is.null(input$node.start.cov)){
+        tabs<-list()
+        for (i in c(1:length(input$node.start.cov))) {
+          id.choices<-ObjCFM$findReacheableNodes(input$node.start.cov[i])[1,]
+          # if(!is.null(input$node.start.cov)){
+          #   id.choices<-ObjCFM$findReacheableNodes(input$node.start.cov[i])[1,]
+          # }else{
+          #   id.choices<-NULL
+          # }
+
+          tabs[[i]]<-fluidRow(
+            column(8,
+                   selectInput(inputId = paste0("id.end",i),
+                               label = paste("select node end for node start:",input$node.start.cov[i]),
+                               choices =  id.choices,
+                               multiple = TRUE,
+                               selected = NULL)
+            )
+          )
+        }
+        data_reactive$tabs.node.end<-tabs
+      }
+
+
+      # for (i in c(1:length(input$node.start.cov))) {
+      #   if(!is.null(input$node.start.cov)){
+      #     id.choices<-ObjCFM$findReacheableNodes(input$node.start.cov[i])[1,]
+      #   }else{
+      #     id.choices<-NULL
+      #   }
+      #
+      #   tabs[[i]]<-fluidRow(
+      #     column(8,
+      #            selectInput(inputId = paste0("id.end",i),
+      #                        label = paste("select node end for node start:",input$node.start.cov[i]),
+      #                        choices =  id.choices,
+      #                        multiple = TRUE,
+      #                        selected = NULL)
+      #            )
+      #     )
+      # }
+
+      # data_reactive$tabs.node.end<-tabs
+    })
+
+
+    output$node.end.sel<-renderUI({
+        tagList(
+          data_reactive$tabs.node.end
+          # do.call(fluidPage,data_reactive$tabs.node.end)
+        )
+    })
+
+    observeEvent(input$plot.cov.graph,{
+      lst.to<-lapply(1:length(input$node.start.cov),function(i){
+        path.name<-paste0("id.end",i)
+        return(input[[path.name]])
+      })
+      arr.from<-input$node.start.cov
+
+      #SERIE DI CONTROLLI CHE VANNO SISTEMATI:
+      #sto assumendo che se length(unique(data_reactive$EventLog[,input$covariate]))<7 allora la cov che sto considerando è categorica
+      if(is.null(arr.from) |is.null(lst.to[[1]])){
+        sendSweetAlert(
+          session = session,
+          title = "Error",
+          text = "Please enter values for id node start and/or id node end",
+          type = "primary"
+        )
+        output$cov_time_graph<- shiny::renderPlot({
+
+
+        })
+      }else{
+        output$cov_time_graph<- shiny::renderPlot({
+          if(length(unique(data_reactive$EventLog[,input$covariate]))<10){
+            sendSweetAlert(
+              session = session,
+              title = "Error",
+              text = "Please select numerical variables as covariate",
+              type = "primary"
+            )
+
+          }else{
+            cov_time_fun(ObjDL,
+                         ObjCFM,
+                         input$covariate,
+                         arr.from = arr.from,
+                         lst.to,
+                         covariate.type ='attribute',
+                         # is.numerical=input$is.numerical,
+                         points.symbols=20,
+                         plot.RegressionLine = input$reg.line,
+                         legend.position = input$legend.pos.cov,
+                         UM = input$UM.cov.plot,
+                         size.symbols=1.5,
+                         line.width=2,
+                         y.int.legend=0.8,
+                         legend.text.size=0.8)
+          }
+
+        })
+        }
+      })
 
 
 
@@ -969,6 +1230,10 @@ server.careFlow<-function(input,output,session){
      grViz(CFgraph())
    })
 
+
+
+
+######################################################### OTTIMIZZARE CODICE ############################################
    output$prev.cfm<-renderGrViz({
      cfm.type<-input$prev.cfm.type
      switch (cfm.type,
@@ -985,7 +1250,23 @@ server.careFlow<-function(input,output,session){
 
    })
 
+   output$prev.cfm.cov<-renderGrViz({
+     cfm.type<-input$prev.cfm.type.cov
+     switch (cfm.type,
+             "CFM" = {grViz(CFgraph())},
+             "Stratified CFM"={
+               if(is.null(data_reactive$strat.plot)){
+                 validate("To view this representation, it is first necessary to set the necessary parameters in the \"Care Flow Miner\" section")
+               }else{
+                 grViz(data_reactive$strat.plot)
+               }
+             },
+             "Predictive CFM"={grViz(CFgraph.pred())}
+     )
 
+   })
+
+######################################################################################################################################################
    #PLOT CAREFLOW PREDITTIVO
    CFgraph.pred<-reactive({
      if(input$max_depth.pred){
